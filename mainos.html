@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mainos Jyväskylä</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="map">
+    <div id="container">
+      <div class="header">
+        <h3 id="tracker-title">Location Tracker</h3>
+        <button id="minimize-btn" class="minimize-btn" onclick="toggleMinimize()">
+          <i class="fas fa-minus"></i>
+        </button>
+      </div>
+      <div id="tracker-content">
+        <div id="company-info" class="company-info" style="display: none;">
+        </div>
+        <div class="progress-section">
+          <div class="progress-header">
+            <span>Progress:</span>
+            <span id="progress-percent">0%</span>
+          </div>
+          <div class="progress-bar-container">
+            <div id="progress-bar"></div>
+          </div>
+        </div>
+        <div class="grey-markers-toggle">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              id="grey-markers-toggle"
+              checked
+              onchange="toggleGreyMarkers(this)"
+              class="checkbox-input"
+            />
+            <span>Show grey markers</span>
+          </label>
+        </div>
+        <div id="stats">
+          <div class="stats-row">
+            <span>Total Locations:</span>
+            <span id="total-count">0</span>
+          </div>
+          <div class="stats-row">
+            <span class="visited-text">Visited:</span>
+            <span id="visited-count" class="visited-count">0</span>
+          </div>
+          <div class="stats-row">
+            <span class="not-visited-text">Not Visited:</span>
+            <span id="not-visited-count" class="not-visited-count">0</span>
+          </div>
+        </div>
+        <div class="company-input-section">
+          <div class="input-group">
+            <input type="text" id="company-id-input" placeholder="Enter Company ID" class="company-input">
+            <button onclick="loadCompanyData()" class="btn btn-warning">Load Company</button>
+          </div>
+        </div>
+        <div class="button-container">
+          <button onclick="exportData()" class="btn btn-primary">Export</button>
+          <label for="import-file" class="btn btn-success">
+            Import
+            <input type="file" id="import-file" accept=".json" onchange="importData(this)">
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="https://kit.fontawesome.com/91c7a109fb.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Initialize the application when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeApp();
+    });
+  </script>
+</body>
+</html>
