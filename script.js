@@ -33,8 +33,6 @@ async function renderData() {
     url = newCorsUrl;
     renderData();
   } else {
-    // Store original data in localStorage
-    localStorage.setItem(dataManager.originalKey, JSON.stringify(allData));
     filterItems();
   }
 }
@@ -61,9 +59,61 @@ const fetchCompanyData = async () => {
 
 // Function to display company data
 async function renderCompanyData() {
+  // Check if we have allCompanyData in localStorage
+  if (localStorage.getItem(dataManager.companyOriginalKey)) {
+    combineData();
+    return;
+  }
+
   const data = await fetchCompanyData();
   allCompanyData.push(data);
+  
+  // Store allCompanyData in localStorage
+  localStorage.setItem(dataManager.companyOriginalKey, JSON.stringify(allCompanyData));
   combineData();
+}
+
+// Function which combines the filteredData and allCompanyData
+function combineData() {
+  filteredCompanyData.length = 0; // Clear the array
+  const allCompanyData = JSON.parse(localStorage.getItem(dataManager.companyOriginalKey) || '[]');
+  const filteredData = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
+
+  if (allCompanyData.length > 0 && allCompanyData[0].reserved_resources) {
+    allCompanyData[0].reserved_resources.forEach(resource => {
+      if (resource.inventory_resource && resource.inventory_resource.map_point_markers) {
+        resource.inventory_resource.map_point_markers.forEach(marker => {
+          // Find matching item in filteredData
+          const matchingItem = filteredData.find(item => item.id === marker.id);
+          if (matchingItem) {
+            // Add the parent resource to filteredCompanyData
+            filteredCompanyData.push({
+              id: marker.id,
+              name: matchingItem.name,
+              lat: matchingItem.lat,
+              lng: matchingItem.lng,
+              startDate: resource.start_date,
+              endDate: resource.end_date,
+              companyName: allCompanyData[0].name,
+              companyDescription: allCompanyData[0].description
+            });
+          }
+        });
+      }
+    });
+
+    // Store combined data in localStorage
+    localStorage.setItem(dataManager.companyModifiedKey, JSON.stringify(filteredCompanyData));
+    
+    // After combining data, render company markers
+    if (filteredCompanyData.length > 0) {
+      // Display company name info and update tracker title
+      displayCompanyInfo(allCompanyData[0].name);
+      renderCompanyMarkers();
+    } else {
+      alert('No matching locations found for this company');
+    }
+  }
 }
 
 // Function to load company data based on user input
@@ -90,44 +140,6 @@ function loadCompanyData() {
   
   // Fetch and render company data
   renderCompanyData();
-}
-
-// Function which combines the filteredData and allCompanyData
-function combineData() {
-  filteredCompanyData.length = 0; // Clear the array
-  
-  if (allCompanyData.length > 0 && allCompanyData[0].reserved_resources) {
-    allCompanyData[0].reserved_resources.forEach(resource => {
-      if (resource.inventory_resource && resource.inventory_resource.map_point_markers) {
-        resource.inventory_resource.map_point_markers.forEach(marker => {
-          // Find matching item in filteredData
-          const matchingItem = filteredData.find(item => item.id === marker.id);
-          if (matchingItem) {
-            // Add the parent resource to filteredCompanyData
-            filteredCompanyData.push({
-              id: marker.id,
-              name: matchingItem.name,
-              lat: matchingItem.lat,
-              lng: matchingItem.lng,
-              startDate: resource.start_date,
-              endDate: resource.end_date,
-              companyName: allCompanyData[0].name,
-              companyDescription: allCompanyData[0].description
-            });
-          }
-        });
-      }
-    });
-    
-    // After combining data, render company markers
-    if (filteredCompanyData.length > 0) {
-      // Display company name info and update tracker title
-      displayCompanyInfo(allCompanyData[0].name);
-      renderCompanyMarkers();
-    } else {
-      alert('No matching locations found for this company');
-    }
-  }
 }
 
 // Initialize the map
@@ -531,8 +543,11 @@ function filterAndAddMarkers() {
 
 // Render company data markers with red icons
 function renderCompanyMarkers() {
+  // Get company data from local storage
+  const companyData = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
+
   // Convert company data to the format expected by DataManager
-  const companyDataForManager = filteredCompanyData.map(place => ({
+  const companyDataForManager = companyData.map(place => ({
     id: place.id,
     lat: parseFloat(place.lat),
     lng: parseFloat(place.lng),
@@ -657,6 +672,11 @@ function initializeApp() {
     initializeMapWithFilteredData();
   } else {
     renderData();
+  }
+
+  // Initialize company data if available
+  if (localStorage.getItem(dataManager.companyOriginalKey)) {
+    renderCompanyMarkers();
   }
 }
 
