@@ -33,14 +33,22 @@ async function renderData() {
     url = newCorsUrl;
     renderData();
   } else {
+    // Store original data in localStorage
+    localStorage.setItem(dataManager.originalKey, JSON.stringify(allData));
     filterItems();
   }
 }
 
 // Function to filter items
 function filterItems() {
-  filteredData.length = 0; // Clear the array
+  // Clear the array
+  filteredData.length = 0;
+  
+  // Filter data to include only items with name containing 'Jyväskylä'
   filteredData.push(...allData.filter(item => item.name.includes('Jyväskylä')));
+  
+  // Store filtered data in localStorage
+  localStorage.setItem(dataManager.originalKey, JSON.stringify(filteredData));
 
   // Initialize the map with filtered data after filtering is complete
   initializeMapWithFilteredData();
@@ -115,7 +123,6 @@ function combineData() {
     if (filteredCompanyData.length > 0) {
       // Display company name info and update tracker title
       displayCompanyInfo(allCompanyData[0].name);
-      // updateTrackerTitle(allCompanyData[0].name);
       renderCompanyMarkers();
     } else {
       alert('No matching locations found for this company');
@@ -244,17 +251,17 @@ class DataManager {
 // Initialize data manager
 const dataManager = new DataManager();
 
-// Function to initialize map with filtered data
+// Function to initialize map with filtered data from local storage
 function initializeMapWithFilteredData() {
+  // Get filtered data from local storage
+  const filteredData = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
+  
   if (filteredData.length > 0) {
     // Hide company info when loading regular data
     const companyInfoElement = document.getElementById('company-info');
     if (companyInfoElement) {
       companyInfoElement.style.display = 'none';
     }
-    
-    // Reset tracker title to default
-    // updateTrackerTitle();
     
     const placesData = dataManager.initializeData(filteredData);
     renderPlaces(placesData);
@@ -427,6 +434,9 @@ const redIcon = L.icon({
 // Store markers globally for updates
 let markersLayer;
 
+// Store all markers separately for filtering
+let allMarkers = [];
+
 // Render data to the map
 function renderPlaces(placesData) {
   if (placesData.length === 0) {
@@ -438,28 +448,21 @@ function renderPlaces(placesData) {
     map.removeLayer(markersLayer);
   }
 
+  // Clear all markers array
+  allMarkers = [];
+
   // Create a marker cluster group
   markersLayer = L.markerClusterGroup({
-    // Adjust the maxClusterRadius to control the size of clusters in px
     maxClusterRadius: 20
   });
 
-  // Loop through the data and add markers to the cluster group
+  // Loop through the data and create markers
   placesData.forEach(place => {
     const checkboxId = `status-${place.id}`;
-
-    // Choose icon based on status
     const markerIcon = place.status ? greenIcon : greyIcon;
-
     const marker = L.marker([place.lat, place.lng], { icon: markerIcon });
 
-    // Set initial opacity based on grey markers toggle
-    const greyToggle = document.getElementById('grey-markers-toggle');
-    if (!place.status && greyToggle && !greyToggle.checked) {
-      marker.setOpacity(0);
-    }
-
-    // Create popup content dynamically to always reflect current status
+    // Create popup content dynamically
     marker.bindPopup(() => {
       const currentStatus = dataManager.getStatus(place.id);
       const isChecked = currentStatus ? 'checked' : '';
@@ -485,18 +488,45 @@ function renderPlaces(placesData) {
       `;
     });
 
-    // Store location ID in marker for later reference
+    // Store location ID and additional info in marker
     marker.locationId = place.id;
+    marker.isCompanyLocation = place.isCompanyLocation || false;
+    marker.isVisited = place.status;
 
-    // Add marker to cluster group
-    markersLayer.addLayer(marker);
+    // Add to all markers array
+    allMarkers.push(marker);
   });
+
+  // Filter and add markers to cluster based on current toggle state
+  filterAndAddMarkers();
 
   // Add the cluster group to the map
   map.addLayer(markersLayer);
 
   // Update statistics after rendering
   updateStatistics();
+}
+
+// Function to filter and add appropriate markers to cluster
+function filterAndAddMarkers() {
+  // Clear the cluster group
+  markersLayer.clearLayers();
+  
+  const greyToggle = document.getElementById('grey-markers-toggle');
+  const showGreyMarkers = greyToggle ? greyToggle.checked : true;
+
+  allMarkers.forEach(marker => {
+    const isVisited = dataManager.getStatus(marker.locationId);
+    const isCompanyLocation = marker.isCompanyLocation;
+    
+    // Always show visited markers and company markers
+    if (isVisited || isCompanyLocation) {
+      markersLayer.addLayer(marker);
+    } else if (showGreyMarkers) {
+      // Only add grey markers if toggle is enabled
+      markersLayer.addLayer(marker);
+    }
+  });
 }
 
 // Render company data markers with red icons
@@ -616,45 +646,19 @@ function formatDate(dateString) {
 
 // Function to toggle grey markers visibility
 function toggleGreyMarkers(checkbox) {
-  const showGreyMarkers = checkbox.checked;
-  
-  if (markersLayer) {
-    markersLayer.eachLayer(function(marker) {
-      // Check if marker is grey (not visited and not a company location)
-      const companyData = localStorage.getItem(dataManager.companyModifiedKey);
-      const isCompanyLocation = companyData && JSON.parse(companyData).some(place => place.id === marker.locationId);
-      const isVisited = dataManager.getStatus(marker.locationId);
-      
-      // If it's a grey marker (not visited and not company location)
-      if (!isVisited && !isCompanyLocation) {
-        if (showGreyMarkers) {
-          marker.setOpacity(1);
-          marker.setIcon(greyIcon);
-        } else {
-          marker.setOpacity(0);
-        }
-      }
-    });
-  }
+  // Simply rebuild the cluster with current filter settings
+  filterAndAddMarkers();
 }
 
 // Initialize the application
 function initializeApp() {
-  // Uncomment the line below to start fetching data from API
-  renderData();
+  // Check if we have original filtered data in localStorage
+  if (localStorage.getItem(dataManager.originalKey)) {
+    initializeMapWithFilteredData();
+  } else {
+    renderData();
+  }
 }
-
-// // Function to update tracker title
-// function updateTrackerTitle(companyName = null) {
-//   const titleElement = document.getElementById('tracker-title');
-//   if (titleElement) {
-//     if (companyName) {
-//       titleElement.textContent = `Location Tracker - ${companyName}`;
-//     } else {
-//       titleElement.textContent = 'Location Tracker';
-//     }
-//   }
-// }
 
 // Function to toggle container minimize
 function toggleMinimize() {
