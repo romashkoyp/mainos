@@ -231,6 +231,11 @@ html, body {
   color: #dc3545;
 }
 
+.company-name {
+  display: flex;
+  flex-direction: column;
+}
+
 .red-marker-indicator {
   background-color: #dc3545;
   color: white;

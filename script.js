@@ -262,6 +262,21 @@ class DataManager {
 
 // Initialize data manager
 const dataManager = new DataManager();
+// Function to clear all data except original filtered data
+function clearCompanyData() {
+  if (!confirm('Are you sure you want to clear all company data?')) return;
+  localStorage.removeItem(dataManager.companyOriginalKey);
+  localStorage.removeItem(dataManager.companyModifiedKey);
+  localStorage.removeItem(dataManager.modifiedKey);
+  localStorage.removeItem(dataManager.statusKey);
+  allCompanyData.length = 0;
+  filteredCompanyData.length = 0;
+  initializeMapWithFilteredData();
+  const companyInfoElement = document.getElementById('company-info');
+  if (companyInfoElement) {
+    companyInfoElement.style.display = 'none';
+  }
+}
 
 // Function to initialize map with filtered data from local storage
 function initializeMapWithFilteredData() {
@@ -635,18 +650,25 @@ function renderCompanyMarkers() {
   updateStatistics();
 }
 
-// Function to display company information
+// Function to display company information with a clear button
 function displayCompanyInfo(companyName) {
   const companyInfoElement = document.getElementById('company-info');
   if (companyInfoElement) {
     companyInfoElement.innerHTML = `
       <div class="company-info-content">
-        <i class="fas fa-building"></i>
-        <span>Company: ${companyName}</span>
-        <span class="red-marker-indicator">Red markers</span>
+        <div class="company-name">
+          <span>${companyName.split('.')[0]}</span>
+          <span>${companyName.split(',')[1]}</span>
+        </div>
+        <button id="clear-company-data" class="red-marker-indicator">Clear</button>
       </div>
     `;
     companyInfoElement.style.display = 'block';
+    
+    const clearButton = document.getElementById('clear-company-data');
+    if (clearButton) {
+      clearButton.addEventListener('click', clearCompanyData);
+    }
   }
 }
 
