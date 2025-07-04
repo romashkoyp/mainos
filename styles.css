@@ -333,6 +333,10 @@ html, body {
   width: 100%;
 }
 
+.leaflet-touch .leaflet-bar a {
+	display: none;
+}
+
 
 /* --- MOBILE RESPONSIVENESS --- */
 /* These styles will apply only on screens 768px wide or smaller */
