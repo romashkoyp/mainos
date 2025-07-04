@@ -11,18 +11,28 @@ let companyId = 'af79ad25-1bc0-4451-a8bc-600d12b36a68';
 let companyUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + companyId + '/?format=json'
 let urlCompany = corsProxyUrl + encodeURIComponent(companyUrl);
 
-const allData = [];
-const filteredData = [];
-const allCompanyData = [];
-const filteredCompanyData = [];
+// Data storage arrays
+const allData = []; // Stores all raw data fetched from the base API
+const filteredData = []; // Stores data filtered for a specific city (e.g., 'Jyväskylä')
+const allCompanyData = []; // Stores raw data fetched from the company-specific API
+const filteredCompanyData = []; // Stores company locations that match the base locations
 
-// --- User Preferences Manager ---
+/**
+ * Manages saving and loading user preferences (map view and filters) to/from localStorage.
+ */
 class UserPreferencesManager {
+    /**
+     * Initializes the keys used for storing data in localStorage.
+     */
     constructor() {
         this.mapViewKey = 'mapViewState';
         this.filtersKey = 'filterToggleState';
     }
 
+    /**
+     * Saves the current map center and zoom level to localStorage.
+     * @param {L.Map} map The Leaflet map instance.
+     */
     saveMapState(map) {
         const mapState = {
             zoom: map.getZoom(),
@@ -31,11 +41,18 @@ class UserPreferencesManager {
         localStorage.setItem(this.mapViewKey, JSON.stringify(mapState));
     }
 
+    /**
+     * Loads the saved map state from localStorage.
+     * @returns {Object|null} The saved map state {zoom, center} or null if not found.
+     */
     loadMapState() {
         const savedState = localStorage.getItem(this.mapViewKey);
         return savedState ? JSON.parse(savedState) : null;
     }
 
+    /**
+     * Saves the current state of UI filters (toggles, sliders) to localStorage.
+     */
     saveFilterState() {
         const greyToggle = document.getElementById('grey-markers-toggle');
         const companyToggle = document.getElementById('company-markers-toggle');
@@ -48,6 +65,10 @@ class UserPreferencesManager {
         localStorage.setItem(this.filtersKey, JSON.stringify(filterState));
     }
 
+    /**
+     * Loads the saved filter state from localStorage.
+     * @returns {Object} The saved filter state or a default state.
+     */
     loadFilterState() {
         const savedState = localStorage.getItem(this.filtersKey);
         return savedState ? JSON.parse(savedState) : { showAll: true, showCompany: true, clusterRadius: 70 };
@@ -56,12 +77,18 @@ class UserPreferencesManager {
 const prefsManager = new UserPreferencesManager();
 
 
-// Function to fetch data from the API
+/**
+ * Fetches a single page of location data from the base API.
+ * @returns {Promise<Object>} A promise that resolves to the JSON data from the API.
+ */
 const fetchData = async () => {
   return fetch(url).then(response => response.json());
 };
 
-// Function to process fetched data
+/**
+ * Fetches and processes all pages of data from the base API recursively.
+ * Once all data is fetched, it triggers the filtering process.
+ */
 async function renderData() {
   const data = await fetchData();
   allData.push(...data.results);
@@ -75,7 +102,10 @@ async function renderData() {
   }
 }
 
-// Function to filter items for 'Jyväskylä' and store them as the base layer
+/**
+ * Filters the fetched raw data to include only items from 'Jyväskylä'.
+ * It then formats and stores this data in localStorage as the base layer.
+ */
 function filterItems() {
   filteredData.length = 0;
   filteredData.push(...allData.filter(item => item.name.includes('Jyväskylä')));
@@ -94,19 +124,27 @@ function filterItems() {
   renderMapMarkers();
 }
 
-// Function to fetch company data
+/**
+ * Fetches location data for a specific company from the API.
+ * @returns {Promise<Object>} A promise that resolves to the JSON data from the API.
+ */
 const fetchCompanyData = async () => {
   return fetch(urlCompany).then(response => response.json());
 };
 
-// Function to initiate company data processing
+/**
+ * Initiates the fetching and processing of company-specific data.
+ */
 async function processCompanyData() {
   const data = await fetchCompanyData();
   allCompanyData.push(data);
   combineData();
 }
 
-// Function which combines the base data and company data
+/**
+ * Combines the base location data with the fetched company data.
+ * It finds matching locations and creates a new dataset with enriched company information.
+ */
 function combineData() {
   filteredCompanyData.length = 0;
   const companyApiData = allCompanyData[0];
@@ -146,7 +184,10 @@ function combineData() {
   }
 }
 
-// Function to load company data based on user input
+/**
+ * Handles the "Load" button click. It reads the company ID from the input,
+ * clears previous company data, and initiates the fetch process.
+ */
 function loadCompanyData() {
   const inputElement = document.getElementById('company-id-input');
   const inputCompanyId = inputElement.value.trim();
@@ -175,23 +216,36 @@ var map = L.map('map').setView(
     savedMapState ? savedMapState.zoom : 8
 );
 
+// Saves map state whenever the user stops moving or zooming the map.
 map.on('moveend zoomend', () => {
     prefsManager.saveMapState(map);
 });
 
+// Adds the OpenStreetMap tile layer to the map.
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
 
-// Data Manager with localStorage
+/**
+ * Manages all data interactions with localStorage, such as updating location statuses.
+ */
 class DataManager {
+  /**
+   * Initializes the keys used for storing location data in localStorage.
+   */
   constructor() {
-    this.originalKey = 'originalFilteredData';
-    this.modifiedKey = 'modifiedFilteredData';
-    this.statusKey = 'locationStatus';
-    this.companyModifiedKey = 'modifiedCompanyData';
+    this.originalKey = 'originalFilteredData'; // Base Jyväskylä locations
+    this.modifiedKey = 'modifiedFilteredData'; // Base locations with status updates
+    this.statusKey = 'locationStatus'; // A separate object just for statuses {id: {status, timestamp}}
+    this.companyModifiedKey = 'modifiedCompanyData'; // Company locations with status updates
   }
 
+  /**
+   * Updates the visited status and timestamp for a specific location.
+   * This change is persisted in localStorage.
+   * @param {number} locationId - The ID of the location to update.
+   * @param {boolean} status - The new status (true for visited, false for not visited).
+   */
   updateStatus(locationId, status) {
     const statusData = JSON.parse(localStorage.getItem(this.statusKey) || '{}');
     if (status) {
@@ -201,6 +255,7 @@ class DataManager {
     }
     localStorage.setItem(this.statusKey, JSON.stringify(statusData));
 
+    // Update the status in the company data if it exists there
     const companyData = JSON.parse(localStorage.getItem(this.companyModifiedKey) || '[]');
     const companyIdx = companyData.findIndex(p => p.id === locationId);
     if (companyIdx !== -1) {
@@ -208,6 +263,7 @@ class DataManager {
       localStorage.setItem(this.companyModifiedKey, JSON.stringify(companyData));
     }
 
+    // Update the status in the base modified data
     const modifiedData = JSON.parse(localStorage.getItem(this.modifiedKey) || '[]');
     const modifiedIdx = modifiedData.findIndex(p => p.id === locationId);
     if (modifiedIdx !== -1) {
@@ -216,15 +272,25 @@ class DataManager {
     }
   }
 
+  /**
+   * Retrieves the visited status for a specific location.
+   * @param {number} locationId - The ID of the location.
+   * @returns {boolean} The visited status (true/false).
+   */
   getStatus(locationId) {
     const statusData = JSON.parse(localStorage.getItem(this.statusKey) || '{}');
     const entry = statusData[locationId];
     if (typeof entry === 'object' && entry !== null) {
         return entry.status || false;
     }
-    return !!entry;
+    return !!entry; // Legacy support for old boolean-only format
   }
 
+  /**
+   * Retrieves the timestamp of when a location was marked as visited.
+   * @param {number} locationId - The ID of the location.
+   * @returns {string|null} The visit timestamp in ISO format, or null if not visited.
+   */
   getTimestamp(locationId) {
     const statusData = JSON.parse(localStorage.getItem(this.statusKey) || '{}');
     const entry = statusData[locationId];
@@ -234,6 +300,10 @@ class DataManager {
     return null;
   }
 
+  /**
+   * Gets the currently active dataset for display (company data if loaded, otherwise base data).
+   * @returns {Array} An array of location objects to be displayed.
+   */
   getCurrentData() {
     const companyData = JSON.parse(localStorage.getItem(this.companyModifiedKey) || '[]');
     if (companyData.length > 0) {
@@ -245,6 +315,10 @@ class DataManager {
 
 const dataManager = new DataManager();
 
+/**
+ * Clears all company-specific data from the application and localStorage.
+ * Re-renders the map to show only the base layer.
+ */
 function clearCompanyData() {
   if (!confirm('Are you sure you want to clear all company data?')) return;
   localStorage.removeItem(dataManager.companyModifiedKey);
@@ -260,11 +334,18 @@ function clearCompanyData() {
   renderMapMarkers();
 }
 
+/**
+ * Initializes the map view with data already present in localStorage.
+ */
 function initializeMapWithFilteredData() {
   renderMapMarkers();
 }
 
-// --- NEW: Function to re-open a popup after re-rendering ---
+/**
+ * Finds a marker by its ID and opens its popup, zooming to it if necessary.
+ * This is useful for re-opening a popup after re-rendering the map.
+ * @param {number} locationId - The ID of the location whose popup should be opened.
+ */
 function reopenPopup(locationId) {
     if (!markersLayer) return;
 
@@ -280,7 +361,12 @@ function reopenPopup(locationId) {
     }
 }
 
-// --- UPDATED: handleStatusChange now re-opens the popup ---
+/**
+ * Handles the change event of the "Visited" checkbox in a marker's popup.
+ * It updates the location's status and re-renders the map.
+ * @param {number} locationId - The ID of the location that was changed.
+ * @param {HTMLInputElement} checkbox - The checkbox element that was clicked.
+ */
 function handleStatusChange(locationId, checkbox) {
   const newStatus = checkbox.checked;
   dataManager.updateStatus(locationId, newStatus);
@@ -292,6 +378,10 @@ function handleStatusChange(locationId, checkbox) {
   reopenPopup(locationId);
 }
 
+/**
+ * Updates the statistics panel (total, visited, not visited, progress bar)
+ * based on the currently displayed data.
+ */
 function updateStatistics() {
   const currentDisplayData = dataManager.getCurrentData();
   const total = currentDisplayData.length;
@@ -306,7 +396,7 @@ function updateStatistics() {
   document.getElementById('progress-bar').style.width = `${progress}%`;
 }
 
-// Create custom marker icons
+// Create custom marker icons for different states
 const greyIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -324,9 +414,13 @@ const redIcon = L.icon({
 });
 
 // Global variables for map layer and settings
-let markersLayer;
-let clusterRadius = 70;
+let markersLayer; // Holds the marker cluster layer
+let clusterRadius = 70; // Default clustering radius
 
+/**
+ * Updates the cluster radius based on the slider input and re-renders the map.
+ * @param {string} value - The new radius value from the slider.
+ */
 function updateClusterRadius(value) {
   document.getElementById('cluster-radius-value').textContent = value;
   clusterRadius = parseInt(value);
@@ -334,6 +428,11 @@ function updateClusterRadius(value) {
   renderMapMarkers();
 }
 
+/**
+ * Formats an ISO timestamp string into a readable format (DD-MM-YYYY HH:MM).
+ * @param {string} isoString - The ISO date string to format.
+ * @returns {string} The formatted date string, or an empty string if input is invalid.
+ */
 function formatTimestamp(isoString) {
     if (!isoString) return '';
     const date = new Date(isoString);
@@ -345,6 +444,12 @@ function formatTimestamp(isoString) {
     return `${day}-${month}-${year} ${hours}:${minutes}`;
 }
 
+/**
+ * Creates the HTML content for a marker's popup.
+ * @param {Object} placeData - The data object for the location.
+ * @param {boolean} isCompany - Whether this is a company-specific location.
+ * @returns {string} The HTML string for the popup.
+ */
 function createPopupContent(placeData, isCompany) {
     const currentStatus = dataManager.getStatus(placeData.id);
     const isChecked = currentStatus ? 'checked' : '';
@@ -380,6 +485,10 @@ function createPopupContent(placeData, isCompany) {
     `;
 }
 
+/**
+ * The main rendering function. It clears existing markers from the map and adds new ones
+ * based on the current data and filter settings.
+ */
 function renderMapMarkers() {
     const allBaseLocations = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
     const companyLocations = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
@@ -390,11 +499,14 @@ function renderMapMarkers() {
 
     if (allBaseLocations.length === 0) return;
 
+    // Create a Map for quick lookup of company locations by ID
     const companyDataMap = new Map(companyLocations.map(item => [item.id, item]));
 
+    // Remove old layer and create a new one with the current cluster radius
     if (markersLayer) map.removeLayer(markersLayer);
     markersLayer = L.markerClusterGroup({ maxClusterRadius: clusterRadius });
 
+    // Iterate through all base locations to decide how to render each one
     allBaseLocations.forEach(place => {
         const status = dataManager.getStatus(place.id);
         const isCompanyLocation = companyDataMap.has(place.id);
@@ -403,16 +515,16 @@ function renderMapMarkers() {
         let popupContent = null;
         let isVisible = false;
 
-        if (status) {
+        if (status) { // If visited, always show as green
             icon = greenIcon;
             isVisible = true;
             popupContent = isCompanyLocation ? createPopupContent(companyDataMap.get(place.id), true) : createPopupContent(place, false);
-        } else {
-            if (isCompanyLocation && showCompanyMarkers) {
+        } else { // If not visited
+            if (isCompanyLocation && showCompanyMarkers) { // Show as red if it's a company location and the filter is on
                 icon = redIcon;
                 isVisible = true;
                 popupContent = createPopupContent(companyDataMap.get(place.id), true);
-            } else if (showAllToggle) {
+            } else if (showAllToggle) { // Show as grey if it's a base location and the filter is on
                 icon = greyIcon;
                 isVisible = true;
                 popupContent = createPopupContent(place, false);
@@ -421,9 +533,9 @@ function renderMapMarkers() {
 
         if (isVisible) {
             let marker = L.marker([place.lat, place.lng], { icon: icon });
-            marker.locationId = place.id;
+            marker.locationId = place.id; // Store ID on marker for easy access
             marker.isCompanyLocation = isCompanyLocation;
-            marker.bindPopup(() => popupContent);
+            marker.bindPopup(() => popupContent); // Use a function to generate popup content on-demand
             markersLayer.addLayer(marker);
         }
     });
@@ -432,11 +544,19 @@ function renderMapMarkers() {
     updateStatistics();
 }
 
+/**
+ * A helper function to save the current filter state and then re-render the map.
+ * Used as an onchange handler for filter toggles.
+ */
 function saveStateAndRender() {
     prefsManager.saveFilterState();
     renderMapMarkers();
 }
 
+/**
+ * Displays the company information panel in the UI.
+ * @param {string} companyName - The name of the company to display.
+ */
 function displayCompanyInfo(companyName) {
   const companyInfoElement = document.getElementById('company-info');
   if (companyInfoElement) {
@@ -453,11 +573,17 @@ function displayCompanyInfo(companyName) {
     `;
     companyInfoElement.style.display = 'initial';
     
+    // Add event listeners to the newly created elements
     document.getElementById('company-markers-toggle').addEventListener('change', saveStateAndRender);
     document.getElementById('clear-company-data').addEventListener('click', clearCompanyData);
   }
 }
 
+/**
+ * Formats a date string into DD-MM-YYYY format.
+ * @param {string} dateString - The date string to format.
+ * @returns {string} The formatted date.
+ */
 function formatDate(dateString) {
   const date = new Date(dateString);
   const day = String(date.getDate()).padStart(2, '0');
@@ -466,6 +592,9 @@ function formatDate(dateString) {
   return `${day}-${month}-${year}`;
 }
 
+/**
+ * Toggles the minimized/maximized state of the control panel.
+ */
 function toggleMinimize() {
   const container = document.getElementById('container');
   const content = document.getElementById('tracker-content');
@@ -482,6 +611,9 @@ function toggleMinimize() {
   }
 }
 
+/**
+ * Exports the user's progress (statuses and company data) to a JSON file.
+ */
 function exportData() {
     const dataToExport = {
         locationStatus: localStorage.getItem(dataManager.statusKey) || '{}',
@@ -506,6 +638,10 @@ function exportData() {
     alert('Data exported successfully!');
 }
 
+/**
+ * Imports user progress from a JSON file.
+ * @param {Event} event - The file input change event.
+ */
 function importData(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -526,23 +662,31 @@ function importData(event) {
         } catch (error) {
             alert('Import failed: Could not parse the file. ' + error.message);
         } finally {
+            // Reset the file input to allow importing the same file again
             event.target.value = '';
         }
     };
     reader.readAsText(file);
 }
 
+/**
+ * Initializes the application on page load. It restores filter states and
+ * either fetches initial data or renders the map using data from localStorage.
+ */
 function initializeApp() {
   const savedFilters = prefsManager.loadFilterState();
   document.getElementById('grey-markers-toggle').checked = savedFilters.showAll;
   
+  // Restore cluster slider state
   const clusterSlider = document.getElementById('cluster-radius-slider');
   const clusterValueSpan = document.getElementById('cluster-radius-value');
   clusterRadius = parseInt(savedFilters.clusterRadius);
   clusterSlider.value = clusterRadius;
   clusterValueSpan.textContent = clusterRadius;
 
+  // Check if base data already exists
   if (localStorage.getItem(dataManager.originalKey)) {
+    // If so, check for company data and display info if present
     const companyData = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
     if (companyData.length > 0 && companyData[0].companyName) {
       displayCompanyInfo(companyData[0].companyName);
@@ -551,9 +695,11 @@ function initializeApp() {
        if (companyInfoElement) companyInfoElement.style.display = 'none';
     }
     
+    // Render the map with existing data
     initializeMapWithFilteredData();
 
   } else {
+    // If no data exists, fetch it from the API
     renderData();
   }
 }
