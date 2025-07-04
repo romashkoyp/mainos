@@ -303,3 +303,16 @@ html, body {
 .container-minimized #tracker-content {
   display: none;
 }
+
+.slider-container {
+  margin: 10px 0;
+}
+
+.slider-container label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.slider-container input[type="range"] {
+  width: 100%;
+}

@@ -74,6 +74,20 @@
             <input type="file" id="import-file" accept=".json" onchange="importData(this)">
           </label>
         </div>
+        <div class="control-section">
+          <div class="slider-container">
+            <label for="cluster-radius-slider">Cluster Radius: <span id="cluster-radius-value">20</span>px</label>
+            <input 
+              type="range" 
+              id="cluster-radius-slider" 
+              min="0" 
+              max="100" 
+              step="10" 
+              value="20"
+              oninput="updateClusterRadius(this.value)"
+            >
+          </div>
+        </div>
       </div>
     </div>
   </div>
