@@ -684,6 +684,12 @@ function displayCompanyInfo(companyName) {
   if (companyInfoElement) {
     companyInfoElement.innerHTML = `
       <div class="company-info-content">
+        <input
+          type="checkbox"
+          id="company-markers-toggle"
+          checked
+          class="checkbox-input-company"
+        />
         <div class="company-name">
           <span>${companyName.split('.')[0]}</span>
           <span>${companyName.split(',')[1]}</span>

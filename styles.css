@@ -165,8 +165,12 @@ html, body {
   font-weight: bold;
 }
 
-.checkbox-input {
-  transform: scale(1.2);
+.checkbox-input, .checkbox-input-company {
+  transform: scale(1.5);
+}
+
+.checkbox-input-company {
+  accent-color: #dc3545;
 }
 
 .status-text-visited {
@@ -217,7 +221,6 @@ html, body {
   padding: 8px;
   background-color: #f8f9fa;
   border-radius: 4px;
-  border-left: 4px solid #dc3545;
 }
 
 .company-info-content {
@@ -239,13 +242,13 @@ html, body {
 .red-marker-indicator {
   background-color: #dc3545;
   color: white;
-  padding: 2px 6px;
+  padding: 6px 7px;
   border-radius: 3px;
-  font-size: 10px;
+  font-size: 12px;
   margin-left: auto;
 }
 
-/* Grey markers toggle */
+/* Grey red markers toggle */
 .grey-markers-toggle {
   margin-bottom: 15px;
   padding: 8px;
