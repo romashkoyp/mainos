@@ -103,6 +103,7 @@ html, body {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  margin-bottom: 15px; /* Add margin to separate from slider */
 }
 
 /* Button styles */
@@ -113,7 +114,9 @@ html, body {
   cursor: pointer;
   font-size: 12px;
   text-decoration: none;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .btn-primary {
@@ -129,6 +132,15 @@ html, body {
 .btn-warning {
   background: #ffc107;
   color: #212529;
+}
+
+.btn-info {
+  background: #17a2b8;
+  color: white;
+}
+
+.btn-info:hover {
+  background: #138496;
 }
 
 .btn:hover {

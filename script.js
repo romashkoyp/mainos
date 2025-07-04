@@ -416,6 +416,7 @@ const redIcon = L.icon({
 // Global variables for map layer and settings
 let markersLayer; // Holds the marker cluster layer
 let clusterRadius = 70; // Default clustering radius
+let userLocationMarker = null; // To hold the marker for the user's position
 
 /**
  * Updates the cluster radius based on the slider input and re-renders the map.
@@ -510,6 +511,7 @@ function renderMapMarkers() {
     allBaseLocations.forEach(place => {
         const status = dataManager.getStatus(place.id);
         const isCompanyLocation = companyDataMap.has(place.id);
+        const placeData = isCompanyLocation ? companyDataMap.get(place.id) : place;
 
         let icon = null;
         let popupContent = null;
@@ -518,23 +520,23 @@ function renderMapMarkers() {
         if (status) { // If visited, always show as green
             icon = greenIcon;
             isVisible = true;
-            popupContent = isCompanyLocation ? createPopupContent(companyDataMap.get(place.id), true) : createPopupContent(place, false);
+            popupContent = createPopupContent(placeData, isCompanyLocation);
         } else { // If not visited
             if (isCompanyLocation && showCompanyMarkers) { // Show as red if it's a company location and the filter is on
                 icon = redIcon;
                 isVisible = true;
-                popupContent = createPopupContent(companyDataMap.get(place.id), true);
+                popupContent = createPopupContent(placeData, true);
             } else if (showAllToggle) { // Show as grey if it's a base location and the filter is on
                 icon = greyIcon;
                 isVisible = true;
-                popupContent = createPopupContent(place, false);
+                popupContent = createPopupContent(placeData, false);
             }
         }
 
         if (isVisible) {
             let marker = L.marker([place.lat, place.lng], { icon: icon });
             marker.locationId = place.id; // Store ID on marker for easy access
-            marker.isCompanyLocation = isCompanyLocation;
+            marker.placeData = placeData; // Store the full data object for easy access later
             marker.bindPopup(() => popupContent); // Use a function to generate popup content on-demand
             markersLayer.addLayer(marker);
         }
@@ -667,6 +669,101 @@ function importData(event) {
         }
     };
     reader.readAsText(file);
+}
+
+/**
+ * Attempts to get the user's current physical location using the browser's Geolocation API.
+ */
+function locateUser() {
+    if (!navigator.geolocation) {
+        alert("Geolocation is not supported by your browser.");
+        return;
+    }
+
+    // Success callback function
+    function success(position) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        const userLatLng = L.latLng(lat, lng);
+
+        // Add or update the user's location marker on the map
+        if (userLocationMarker) {
+            userLocationMarker.setLatLng(userLatLng);
+        } else {
+            // Create a unique marker for the user's location (e.g., a blue circle)
+            userLocationMarker = L.circleMarker(userLatLng, {
+                radius: 8,
+                color: '#1d6ef7',
+                fillColor: '#1d6ef7',
+                fillOpacity: 0.5
+            }).addTo(map);
+        }
+        
+        userLocationMarker.bindPopup("<b>You are here</b>").openPopup();
+
+        // Center the map on the user's location with a suitable zoom level
+        map.setView(userLatLng, 14);
+
+        // Find and highlight the closest location marker
+        findClosestMarker(userLatLng);
+    }
+
+    // Error callback function
+    function error(err) {
+        let message = "Could not get your location. ";
+        switch (err.code) {
+            case err.PERMISSION_DENIED:
+                message += "You denied the request for Geolocation.";
+                break;
+            case err.POSITION_UNAVAILABLE:
+                message += "Location information is unavailable.";
+                break;
+            case err.TIMEOUT:
+                message += "The request to get user location timed out.";
+                break;
+            default:
+                message += "An unknown error occurred.";
+                break;
+        }
+        alert(message);
+    }
+
+    // Request the user's location
+    navigator.geolocation.getCurrentPosition(success, error);
+}
+
+/**
+ * Finds the closest marker on the map to the user's current location.
+ * @param {L.LatLng} userLatLng - The user's current latitude and longitude.
+ */
+function findClosestMarker(userLatLng) {
+    if (!markersLayer || markersLayer.getLayers().length === 0) {
+        console.log("No markers available to compare distance.");
+        return;
+    }
+
+    let closestMarker = null;
+    let minDistance = Infinity;
+
+    // markersLayer.getLayers() returns all individual markers, even inside clusters
+    markersLayer.getLayers().forEach(marker => {
+        const distance = userLatLng.distanceTo(marker.getLatLng());
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestMarker = marker;
+        }
+    });
+
+    if (closestMarker) {
+        // This will zoom to the cluster containing the marker and then open its popup
+        markersLayer.zoomToShowLayer(closestMarker, () => {
+            closestMarker.openPopup();
+        });
+        
+        // Log the distance to the console for more info
+        const distanceInKm = (minDistance / 1000).toFixed(2);
+        console.log(`Closest location is "${closestMarker.placeData.name}" at approximately ${Math.round(minDistance)} meters (${distanceInKm} km) away.`);
+    }
 }
 
 /**

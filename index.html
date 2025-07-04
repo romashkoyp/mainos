@@ -63,11 +63,14 @@
         </div>
         <div class="company-input-section">
           <div class="input-group">
-            <input type="text" id="company-id-input" class="company-input">
+            <input type="text" id="company-id-input" value="af79ad25-1bc0-4451-a8bc-600d12b36a68" class="company-input">
             <button onclick="loadCompanyData()" class="btn btn-warning">Load</button>
           </div>
         </div>
         <div class="button-container">
+          <button onclick="locateUser()" class="btn btn-info" title="Find My Location">
+            <i class="fas fa-crosshairs"></i> Find Me
+          </button>
           <button onclick="exportData()" class="btn btn-primary">Export</button>
           <label for="import-file" class="btn btn-success">
             Import
