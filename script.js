@@ -728,6 +728,12 @@ function initializeApp() {
   if (localStorage.getItem(dataManager.companyOriginalKey)) {
     renderCompanyMarkers();
   }
+
+  // Add this to display company info on reload
+  const companyData = JSON.parse(localStorage.getItem(dataManager.companyOriginalKey) || '[]');
+  if (companyData.length > 0 && companyData[0].companyName) {
+    displayCompanyInfo(companyData[0].companyName);
+  }
 }
 
 // Function to toggle container minimize
