@@ -41,7 +41,7 @@
               type="checkbox"
               id="grey-markers-toggle"
               checked
-              onchange="toggleGreyMarkers(this)"
+              onchange="saveStateAndRender()"
               class="checkbox-input"
             />
             <span>All markers</span>
@@ -67,13 +67,13 @@
             <button onclick="loadCompanyData()" class="btn btn-warning">Load</button>
           </div>
         </div>
-        <!-- <div class="button-container">
+        <div class="button-container">
           <button onclick="exportData()" class="btn btn-primary">Export</button>
           <label for="import-file" class="btn btn-success">
             Import
-            <input type="file" id="import-file" accept=".json" onchange="importData(this)">
+            <input type="file" id="import-file" accept=".json" onchange="importData(event)">
           </label>
-        </div> -->
+        </div>
         <div class="control-section">
           <div class="slider-container">
             <label for="cluster-radius-slider">Cluster Radius: <span id="cluster-radius-value">70</span>px</label>

@@ -16,6 +16,46 @@ const filteredData = [];
 const allCompanyData = [];
 const filteredCompanyData = [];
 
+// --- User Preferences Manager ---
+class UserPreferencesManager {
+    constructor() {
+        this.mapViewKey = 'mapViewState';
+        this.filtersKey = 'filterToggleState';
+    }
+
+    saveMapState(map) {
+        const mapState = {
+            zoom: map.getZoom(),
+            center: map.getCenter()
+        };
+        localStorage.setItem(this.mapViewKey, JSON.stringify(mapState));
+    }
+
+    loadMapState() {
+        const savedState = localStorage.getItem(this.mapViewKey);
+        return savedState ? JSON.parse(savedState) : null;
+    }
+
+    saveFilterState() {
+        const greyToggle = document.getElementById('grey-markers-toggle');
+        const companyToggle = document.getElementById('company-markers-toggle');
+        const clusterSlider = document.getElementById('cluster-radius-slider');
+        const filterState = {
+            showAll: greyToggle ? greyToggle.checked : true,
+            showCompany: companyToggle ? companyToggle.checked : true,
+            clusterRadius: clusterSlider ? clusterSlider.value : 70,
+        };
+        localStorage.setItem(this.filtersKey, JSON.stringify(filterState));
+    }
+
+    loadFilterState() {
+        const savedState = localStorage.getItem(this.filtersKey);
+        return savedState ? JSON.parse(savedState) : { showAll: true, showCompany: true, clusterRadius: 70 };
+    }
+}
+const prefsManager = new UserPreferencesManager();
+
+
 // Function to fetch data from the API
 const fetchData = async () => {
   return fetch(url).then(response => response.json());
@@ -128,8 +168,17 @@ function loadCompanyData() {
   processCompanyData();
 }
 
-// Initialize the map
-var map = L.map('map').setView([62.160871, 25.6416672], 8);
+// Map Initialization
+const savedMapState = prefsManager.loadMapState();
+var map = L.map('map').setView(
+    savedMapState ? savedMapState.center : [62.160871, 25.6416672],
+    savedMapState ? savedMapState.zoom : 8
+);
+
+map.on('moveend zoomend', () => {
+    prefsManager.saveMapState(map);
+});
+
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 }).addTo(map);
@@ -145,7 +194,11 @@ class DataManager {
 
   updateStatus(locationId, status) {
     const statusData = JSON.parse(localStorage.getItem(this.statusKey) || '{}');
-    statusData[locationId] = status;
+    if (status) {
+        statusData[locationId] = { status: true, timestamp: new Date().toISOString() };
+    } else {
+        statusData[locationId] = { status: false, timestamp: null };
+    }
     localStorage.setItem(this.statusKey, JSON.stringify(statusData));
 
     const companyData = JSON.parse(localStorage.getItem(this.companyModifiedKey) || '[]');
@@ -163,6 +216,24 @@ class DataManager {
     }
   }
 
+  getStatus(locationId) {
+    const statusData = JSON.parse(localStorage.getItem(this.statusKey) || '{}');
+    const entry = statusData[locationId];
+    if (typeof entry === 'object' && entry !== null) {
+        return entry.status || false;
+    }
+    return !!entry;
+  }
+
+  getTimestamp(locationId) {
+    const statusData = JSON.parse(localStorage.getItem(this.statusKey) || '{}');
+    const entry = statusData[locationId];
+    if (typeof entry === 'object' && entry !== null) {
+        return entry.timestamp || null;
+    }
+    return null;
+  }
+
   getCurrentData() {
     const companyData = JSON.parse(localStorage.getItem(this.companyModifiedKey) || '[]');
     if (companyData.length > 0) {
@@ -170,16 +241,10 @@ class DataManager {
     }
     return JSON.parse(localStorage.getItem(this.modifiedKey) || '[]');
   }
-
-  getStatus(locationId) {
-    const statusData = JSON.parse(localStorage.getItem(this.statusKey) || '{}');
-    return statusData[locationId] || false;
-  }
 }
 
 const dataManager = new DataManager();
 
-// Function to clear all company data
 function clearCompanyData() {
   if (!confirm('Are you sure you want to clear all company data?')) return;
   localStorage.removeItem(dataManager.companyModifiedKey);
@@ -199,26 +264,37 @@ function initializeMapWithFilteredData() {
   renderMapMarkers();
 }
 
-// Handle checkbox change in popup
+// --- NEW: Function to re-open a popup after re-rendering ---
+function reopenPopup(locationId) {
+    if (!markersLayer) return;
+
+    // Use getLayers() to access all markers, even those inside clusters
+    const allMarkers = markersLayer.getLayers();
+    const targetMarker = allMarkers.find(m => m.locationId === locationId);
+
+    if (targetMarker) {
+        // This function will zoom to the cluster and execute the callback
+        markersLayer.zoomToShowLayer(targetMarker, function() {
+            targetMarker.openPopup();
+        });
+    }
+}
+
+// --- UPDATED: handleStatusChange now re-opens the popup ---
 function handleStatusChange(locationId, checkbox) {
   const newStatus = checkbox.checked;
   dataManager.updateStatus(locationId, newStatus);
-
-  // Update popup text for immediate feedback
-  const label = checkbox.parentElement;
-  const span = label.querySelector('span');
-  span.textContent = newStatus ? 'Visited' : 'Not Visited';
-  span.className = newStatus ? 'status-text-visited' : 'status-text-not-visited';
-
-  // Re-render all markers to correctly apply the new icon and visibility rules.
+  
+  // Re-render all markers to apply new rules
   renderMapMarkers();
+  
+  // Re-open the popup of the marker that was just changed
+  reopenPopup(locationId);
 }
 
-// Update statistics in the control panel
 function updateStatistics() {
   const currentDisplayData = dataManager.getCurrentData();
   const total = currentDisplayData.length;
-  // Get status for each item in the current display set
   const visited = currentDisplayData.filter(place => dataManager.getStatus(place.id)).length;
   const notVisited = total - visited;
   const progress = total > 0 ? Math.round((visited / total) * 100) : 0;
@@ -251,14 +327,24 @@ const redIcon = L.icon({
 let markersLayer;
 let clusterRadius = 70;
 
-// Update the cluster radius and re-render the map
 function updateClusterRadius(value) {
   document.getElementById('cluster-radius-value').textContent = value;
   clusterRadius = parseInt(value);
+  prefsManager.saveFilterState();
   renderMapMarkers();
 }
 
-// Helper function to create popup content to avoid repetition
+function formatTimestamp(isoString) {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${day}-${month}-${year} ${hours}:${minutes}`;
+}
+
 function createPopupContent(placeData, isCompany) {
     const currentStatus = dataManager.getStatus(placeData.id);
     const isChecked = currentStatus ? 'checked' : '';
@@ -266,7 +352,13 @@ function createPopupContent(placeData, isCompany) {
 
     let companyInfoHtml = '';
     if (isCompany) {
+        const timestamp = dataManager.getTimestamp(placeData.id);
+        let visitedHtml = '';
+        if (timestamp) {
+            visitedHtml = `<div class="popup-info"><i class="fas fa-check-circle"></i>Visited on: ${formatTimestamp(timestamp)}</div>`;
+        }
         companyInfoHtml = `
+            ${visitedHtml}
             <div class="popup-info"><i class="fas fa-building"></i>Company: ${placeData.companyName}</div>
             <div class="popup-info"><i class="fas fa-info-circle"></i>Description: ${placeData.companyDescription || 'N/A'}</div>
             <div class="popup-info"><i class="fas fa-calendar-alt"></i>Start Date: ${formatDate(placeData.startDate)}</div>
@@ -288,7 +380,6 @@ function createPopupContent(placeData, isCompany) {
     `;
 }
 
-// The single, unified function to render all markers on the map
 function renderMapMarkers() {
     const allBaseLocations = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
     const companyLocations = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
@@ -313,26 +404,15 @@ function renderMapMarkers() {
         let isVisible = false;
 
         if (status) {
-            // Rule 1: Visited markers are always green and visible.
-            // They show company info if applicable.
             icon = greenIcon;
             isVisible = true;
-            if (isCompanyLocation) {
-                popupContent = createPopupContent(companyDataMap.get(place.id), true);
-            } else {
-                popupContent = createPopupContent(place, false);
-            }
+            popupContent = isCompanyLocation ? createPopupContent(companyDataMap.get(place.id), true) : createPopupContent(place, false);
         } else {
-            // Not visited, so visibility and appearance depend on toggles.
             if (isCompanyLocation && showCompanyMarkers) {
-                // Rule 2: Unvisited company markers are red and visible if their toggle is on.
-                // They show company info.
                 icon = redIcon;
                 isVisible = true;
                 popupContent = createPopupContent(companyDataMap.get(place.id), true);
             } else if (showAllToggle) {
-                // Rule 3: Any other unvisited marker is grey and visible if the "All markers" toggle is on.
-                // This includes company markers whose toggle is off. They show generic info.
                 icon = greyIcon;
                 isVisible = true;
                 popupContent = createPopupContent(place, false);
@@ -342,7 +422,7 @@ function renderMapMarkers() {
         if (isVisible) {
             let marker = L.marker([place.lat, place.lng], { icon: icon });
             marker.locationId = place.id;
-            marker.isCompanyLocation = isCompanyLocation; // Keep track of its nature
+            marker.isCompanyLocation = isCompanyLocation;
             marker.bindPopup(() => popupContent);
             markersLayer.addLayer(marker);
         }
@@ -352,18 +432,18 @@ function renderMapMarkers() {
     updateStatistics();
 }
 
-// Function to toggle visibility of non-company, unvisited markers
-function toggleGreyMarkers(checkbox) {
-  renderMapMarkers();
+function saveStateAndRender() {
+    prefsManager.saveFilterState();
+    renderMapMarkers();
 }
 
-// Function to display company information in the control panel
 function displayCompanyInfo(companyName) {
   const companyInfoElement = document.getElementById('company-info');
   if (companyInfoElement) {
+    const savedFilters = prefsManager.loadFilterState();
     companyInfoElement.innerHTML = `
       <div class="company-info-content">
-        <input type="checkbox" id="company-markers-toggle" checked class="checkbox-input-company" />
+        <input type="checkbox" id="company-markers-toggle" ${savedFilters.showCompany ? 'checked' : ''} class="checkbox-input-company" />
         <div class="company-name">
           <span>${companyName.split('.')[0]}</span>
           <span>${companyName.split(',')[1]}</span>
@@ -373,12 +453,11 @@ function displayCompanyInfo(companyName) {
     `;
     companyInfoElement.style.display = 'initial';
     
-    document.getElementById('company-markers-toggle').addEventListener('change', renderMapMarkers);
+    document.getElementById('company-markers-toggle').addEventListener('change', saveStateAndRender);
     document.getElementById('clear-company-data').addEventListener('click', clearCompanyData);
   }
 }
 
-// Helper function to format date as DD-MM-YYYY
 function formatDate(dateString) {
   const date = new Date(dateString);
   const day = String(date.getDate()).padStart(2, '0');
@@ -387,7 +466,6 @@ function formatDate(dateString) {
   return `${day}-${month}-${year}`;
 }
 
-// Function to toggle the control panel's minimized state
 function toggleMinimize() {
   const container = document.getElementById('container');
   const content = document.getElementById('tracker-content');
@@ -404,19 +482,78 @@ function toggleMinimize() {
   }
 }
 
-// Main function to initialize the application
+function exportData() {
+    const dataToExport = {
+        locationStatus: localStorage.getItem(dataManager.statusKey) || '{}',
+        modifiedCompanyData: localStorage.getItem(dataManager.companyModifiedKey) || '[]',
+    };
+
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `location-tracker-data_${dateString}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    alert('Data exported successfully!');
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            if (importedData.locationStatus && importedData.modifiedCompanyData) {
+                localStorage.setItem(dataManager.statusKey, importedData.locationStatus);
+                localStorage.setItem(dataManager.companyModifiedKey, importedData.modifiedCompanyData);
+                if (confirm('Data imported successfully! Reload the page to apply changes?')) {
+                    location.reload();
+                }
+            } else {
+                alert('Import failed: The file is not in the correct format.');
+            }
+        } catch (error) {
+            alert('Import failed: Could not parse the file. ' + error.message);
+        } finally {
+            event.target.value = '';
+        }
+    };
+    reader.readAsText(file);
+}
+
 function initializeApp() {
+  const savedFilters = prefsManager.loadFilterState();
+  document.getElementById('grey-markers-toggle').checked = savedFilters.showAll;
+  
+  const clusterSlider = document.getElementById('cluster-radius-slider');
+  const clusterValueSpan = document.getElementById('cluster-radius-value');
+  clusterRadius = parseInt(savedFilters.clusterRadius);
+  clusterSlider.value = clusterRadius;
+  clusterValueSpan.textContent = clusterRadius;
+
   if (localStorage.getItem(dataManager.originalKey)) {
+    const companyData = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
+    if (companyData.length > 0 && companyData[0].companyName) {
+      displayCompanyInfo(companyData[0].companyName);
+    } else {
+       const companyInfoElement = document.getElementById('company-info');
+       if (companyInfoElement) companyInfoElement.style.display = 'none';
+    }
+    
     initializeMapWithFilteredData();
+
   } else {
     renderData();
-  }
-
-  const companyData = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
-  if (companyData.length > 0 && companyData[0].companyName) {
-    displayCompanyInfo(companyData[0].companyName);
-  } else {
-     const companyInfoElement = document.getElementById('company-info');
-     if (companyInfoElement) companyInfoElement.style.display = 'none';
   }
 }
