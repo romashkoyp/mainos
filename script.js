@@ -204,30 +204,14 @@ function handleStatusChange(locationId, checkbox) {
   const newStatus = checkbox.checked;
   dataManager.updateStatus(locationId, newStatus);
 
+  // Update popup text for immediate feedback
   const label = checkbox.parentElement;
   const span = label.querySelector('span');
   span.textContent = newStatus ? 'Visited' : 'Not Visited';
   span.className = newStatus ? 'status-text-visited' : 'status-text-not-visited';
 
-  if (markersLayer) {
-    markersLayer.eachLayer(function(marker) {
-      if (marker.locationId === locationId) {
-        let newIcon;
-        if (newStatus) {
-          newIcon = greenIcon;
-        } else {
-          newIcon = marker.isCompanyLocation ? redIcon : greyIcon;
-        }
-        marker.setIcon(newIcon);
-        
-        const greyToggle = document.getElementById('grey-markers-toggle');
-        if (!newStatus && !marker.isCompanyLocation && !greyToggle.checked) {
-             markersLayer.removeLayer(marker);
-        }
-      }
-    });
-  }
-  updateStatistics();
+  // Re-render all markers to correctly apply the new icon and visibility rules.
+  renderMapMarkers();
 }
 
 // Update statistics in the control panel
@@ -309,6 +293,9 @@ function renderMapMarkers() {
     const allBaseLocations = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
     const companyLocations = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
     const showAllToggle = document.getElementById('grey-markers-toggle').checked;
+    
+    const companyToggle = document.getElementById('company-markers-toggle');
+    const showCompanyMarkers = companyToggle ? companyToggle.checked : false;
 
     if (allBaseLocations.length === 0) return;
 
@@ -321,27 +308,41 @@ function renderMapMarkers() {
         const status = dataManager.getStatus(place.id);
         const isCompanyLocation = companyDataMap.has(place.id);
 
-        let marker;
-        let icon;
-        let popupContent;
+        let icon = null;
+        let popupContent = null;
+        let isVisible = false;
 
-        if (isCompanyLocation) {
-            const companyPlaceData = companyDataMap.get(place.id);
-            icon = status ? greenIcon : redIcon;
-            popupContent = createPopupContent(companyPlaceData, true);
-            marker = L.marker([place.lat, place.lng], { icon });
-            marker.isCompanyLocation = true;
-        } else {
-            if (showAllToggle || status) {
-                icon = status ? greenIcon : greyIcon;
+        if (status) {
+            // Rule 1: Visited markers are always green and visible.
+            // They show company info if applicable.
+            icon = greenIcon;
+            isVisible = true;
+            if (isCompanyLocation) {
+                popupContent = createPopupContent(companyDataMap.get(place.id), true);
+            } else {
                 popupContent = createPopupContent(place, false);
-                marker = L.marker([place.lat, place.lng], { icon });
-                marker.isCompanyLocation = false;
+            }
+        } else {
+            // Not visited, so visibility and appearance depend on toggles.
+            if (isCompanyLocation && showCompanyMarkers) {
+                // Rule 2: Unvisited company markers are red and visible if their toggle is on.
+                // They show company info.
+                icon = redIcon;
+                isVisible = true;
+                popupContent = createPopupContent(companyDataMap.get(place.id), true);
+            } else if (showAllToggle) {
+                // Rule 3: Any other unvisited marker is grey and visible if the "All markers" toggle is on.
+                // This includes company markers whose toggle is off. They show generic info.
+                icon = greyIcon;
+                isVisible = true;
+                popupContent = createPopupContent(place, false);
             }
         }
 
-        if (marker) {
+        if (isVisible) {
+            let marker = L.marker([place.lat, place.lng], { icon: icon });
             marker.locationId = place.id;
+            marker.isCompanyLocation = isCompanyLocation; // Keep track of its nature
             marker.bindPopup(() => popupContent);
             markersLayer.addLayer(marker);
         }
@@ -372,6 +373,7 @@ function displayCompanyInfo(companyName) {
     `;
     companyInfoElement.style.display = 'initial';
     
+    document.getElementById('company-markers-toggle').addEventListener('change', renderMapMarkers);
     document.getElementById('clear-company-data').addEventListener('click', clearCompanyData);
   }
 }
