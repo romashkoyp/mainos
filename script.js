@@ -1,3 +1,5 @@
+// --- START OF FILE script.js ---
+
 // API Configuration
 const address = 'https://atlasmedia.mediani.fi/api/v1/public-map-point-markers/';
 const format = '/?format=json&page=';
@@ -602,6 +604,7 @@ function toggleMinimize() {
   const content = document.getElementById('tracker-content');
   const minimizeBtn = document.getElementById('minimize-btn');
   
+  // The class 'container-minimized' is now used by CSS to control layout
   if (container.classList.contains('container-minimized')) {
     container.classList.remove('container-minimized');
     content.style.display = 'block';
@@ -702,10 +705,7 @@ function locateUser() {
         userLocationMarker.bindPopup("<b>You are here</b>").openPopup();
 
         // Center the map on the user's location with a suitable zoom level
-        map.setView(userLatLng, 14);
-
-        // Find and highlight the closest location marker
-        findClosestMarker(userLatLng);
+        map.setView(userLatLng, 20);
     }
 
     // Error callback function
@@ -730,40 +730,6 @@ function locateUser() {
 
     // Request the user's location
     navigator.geolocation.getCurrentPosition(success, error);
-}
-
-/**
- * Finds the closest marker on the map to the user's current location.
- * @param {L.LatLng} userLatLng - The user's current latitude and longitude.
- */
-function findClosestMarker(userLatLng) {
-    if (!markersLayer || markersLayer.getLayers().length === 0) {
-        console.log("No markers available to compare distance.");
-        return;
-    }
-
-    let closestMarker = null;
-    let minDistance = Infinity;
-
-    // markersLayer.getLayers() returns all individual markers, even inside clusters
-    markersLayer.getLayers().forEach(marker => {
-        const distance = userLatLng.distanceTo(marker.getLatLng());
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestMarker = marker;
-        }
-    });
-
-    if (closestMarker) {
-        // This will zoom to the cluster containing the marker and then open its popup
-        markersLayer.zoomToShowLayer(closestMarker, () => {
-            closestMarker.openPopup();
-        });
-        
-        // Log the distance to the console for more info
-        const distanceInKm = (minDistance / 1000).toFixed(2);
-        console.log(`Closest location is "${closestMarker.placeData.name}" at approximately ${Math.round(minDistance)} meters (${distanceInKm} km) away.`);
-    }
 }
 
 /**
