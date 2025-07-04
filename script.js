@@ -464,6 +464,34 @@ let markersLayer;
 // Store all markers separately for filtering
 let allMarkers = [];
 
+// Global variable to store the cluster radius
+let clusterRadius = 70;
+
+// Define a function to update the cluster radius
+function updateClusterRadius(value) {
+  // Update the displayed value
+  document.getElementById('cluster-radius-value').textContent = value;
+  
+  // Update the global variable
+  clusterRadius = parseInt(value);
+  
+  // Re-render markers with new cluster radius
+  if (markersLayer) {
+    map.removeLayer(markersLayer);
+    
+    // Create a new marker cluster group with updated radius
+    markersLayer = L.markerClusterGroup({
+      maxClusterRadius: clusterRadius
+    });
+    
+    // Re-add all markers to the new cluster
+    filterAndAddMarkers();
+    
+    // Add the cluster group back to the map
+    map.addLayer(markersLayer);
+  }
+}
+
 // Render data to the map
 function renderPlaces(placesData) {
   if (placesData.length === 0) {
@@ -480,7 +508,7 @@ function renderPlaces(placesData) {
 
   // Create a marker cluster group
   markersLayer = L.markerClusterGroup({
-    maxClusterRadius: 20
+    maxClusterRadius: 50
   });
 
   // Loop through the data and create markers
@@ -586,7 +614,7 @@ function renderCompanyMarkers() {
   // Create a marker cluster group
   markersLayer = L.markerClusterGroup({
     // Adjust the maxClusterRadius to control the size of clusters in px
-    maxClusterRadius: 20
+    maxClusterRadius: 50
   });
 
   // Add company markers with red icons
