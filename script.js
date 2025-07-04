@@ -697,7 +697,7 @@ function displayCompanyInfo(companyName) {
         <button id="clear-company-data" class="red-marker-indicator">Clear</button>
       </div>
     `;
-    companyInfoElement.style.display = 'block';
+    companyInfoElement.style.display = 'initial';
     
     const clearButton = document.getElementById('clear-company-data');
     if (clearButton) {
