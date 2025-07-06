@@ -132,7 +132,13 @@ function filterItems() {
  * @returns {Promise<Object>} A promise that resolves to the JSON data from the API.
  */
 const fetchCompanyData = async () => {
-  return fetch(urlCompany).then(response => response.json());
+  const response = await fetch(urlCompany);
+  console.log(response);
+  if (!response.ok) {
+    alert(`Failed to get data. Status: ${response.status}`);
+    return;
+  }
+  return response.json();
 };
 
 /**
@@ -140,6 +146,10 @@ const fetchCompanyData = async () => {
  */
 async function processCompanyData() {
   const data = await fetchCompanyData();
+  if (!data) return;
+  allCompanyData.length = 0;
+  filteredCompanyData.length = 0;
+  localStorage.removeItem(dataManager.companyModifiedKey);
   allCompanyData.push(data);
   combineData();
 }
@@ -203,10 +213,6 @@ function loadCompanyData() {
   companyId = inputCompanyId;
   companyUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + companyId + '/?format=json';
   urlCompany = corsProxyUrl + encodeURIComponent(companyUrl);
-  
-  allCompanyData.length = 0;
-  filteredCompanyData.length = 0;
-  localStorage.removeItem(dataManager.companyModifiedKey);
   
   inputElement.value = '';
   processCompanyData();
@@ -400,6 +406,7 @@ function updateStatistics() {
 }
 
 // Create custom marker icons for different states
+// https://github.com/pointhi/leaflet-color-markers
 const greyIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
