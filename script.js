@@ -9,7 +9,8 @@ const originalUrl = address + id + format + page;
 const corsProxyUrl = 'https://corsproxy.io/?';
 let url = corsProxyUrl + encodeURIComponent(originalUrl);
 
-let companyId = 'af79ad25-1bc0-4451-a8bc-600d12b36a68';
+// let companyId = 'af79ad25-1bc0-4451-a8bc-600d12b36a68';
+let companyId = null;
 let companyUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + companyId + '/?format=json'
 let urlCompany = corsProxyUrl + encodeURIComponent(companyUrl);
 
@@ -569,8 +570,7 @@ function displayCompanyInfo(companyName) {
       <div class="company-info-content">
         <input type="checkbox" id="company-markers-toggle" ${savedFilters.showCompany ? 'checked' : ''} class="checkbox-input-company" />
         <div class="company-name">
-          <span>${companyName.split('.')[0]}</span>
-          <span>${companyName.split(',')[1]}</span>
+          <span>${companyName}</span>
         </div>
         <button id="clear-company-data" class="red-marker-indicator">Clear</button>
       </div>
