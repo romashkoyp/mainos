@@ -337,6 +337,17 @@ html, body {
 	display: none;
 }
 
+/* className: 'my-div-icon' */
+.my-div-icon {
+  background: none;
+  border: none;
+  box-shadow: none;
+  cursor: pointer;
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
 
 /* --- MOBILE RESPONSIVENESS --- */
 /* These styles will apply only on screens 768px wide or smaller */

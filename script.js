@@ -407,10 +407,22 @@ function updateStatistics() {
 
 // Create custom marker icons for different states
 // https://github.com/pointhi/leaflet-color-markers
-const greyIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-grey.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
+
+const greyIcon = L.divIcon({
+  className: 'my-div-icon',
+  html: '<div>\
+          <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
+            <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
+              fill="#7B7B7B"\
+              stroke="#6B6B6B"\
+              stroke-width="2"/>\
+            <circle cx="20" cy="20" r="14"\
+              fill="#FFFFFF"\
+              stroke="#6B6B6B"\
+              stroke-width="2"/>\
+          </svg>\
+        </div>',
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
 });
 const greenIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
@@ -508,14 +520,22 @@ function renderMapMarkers() {
     const companyToggle = document.getElementById('company-markers-toggle');
     const showCompanyMarkers = companyToggle ? companyToggle.checked : false;
 
-    if (allBaseLocations.length === 0) return;
+    if (allBaseLocations.length === 0) {
+        alert('No data available. Please reload the page.');
+        return;
+      }
 
     // Create a Map for quick lookup of company locations by ID
     const companyDataMap = new Map(companyLocations.map(item => [item.id, item]));
 
     // Remove old layer and create a new one with the current cluster radius
     if (markersLayer) map.removeLayer(markersLayer);
-    markersLayer = L.markerClusterGroup({ maxClusterRadius: clusterRadius });
+    markersLayer = L.markerClusterGroup({
+        maxClusterRadius: clusterRadius,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true
+    });
 
     // Iterate through all base locations to decide how to render each one
     allBaseLocations.forEach(place => {
