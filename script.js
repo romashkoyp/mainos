@@ -452,85 +452,124 @@ function getAdvertisementType(name) {
 }
 
 // Create custom marker icons for different states
-// https://github.com/pointhi/leaflet-color-markers
-const greyIconMaxi = L.divIcon({
-  className: 'my-div-icon',
-  html: '<div>\
-          <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
-            <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
-              fill="#7B7B7B"/>\
-            <circle cx="20" cy="20" r="13" fill="#FFFFFF" />\
-          </svg>\
-        </div>',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
-});
-
-const greyIconClassicKeski = L.divIcon({
-  className: 'my-div-icon',
-  html: '<div>\
-          <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
-            <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
-              fill="#7B7B7B"/>\
-            <rect width="10" height="32" x="15" y="9" rx="5" ry="5" fill="#FFFFFF"/>\
-          </svg>\
-        </div>',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
-});
-
-const greyIconClassicSingle = L.divIcon({
-  className: 'my-div-icon',
-  html: '<div>\
-          <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
-            <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
-              fill="#7B7B7B"/>\
-            <circle cx="20" cy="20" r="6" fill="#FFFFFF" />\
-          </svg>\
-        </div>',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
-});
-
-// Default grey icon (fallback for unknown types)
-const greyIcon = L.divIcon({
-  className: 'my-div-icon',
-  html: '<div>\
-          <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
-            <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
-              fill="#7B7B7B"/>\
-            <circle cx="20" cy="20" r="13" fill="#FFFFFF" />\
-          </svg>\
-        </div>',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
-});
+// Unified SVG-based marker template system
 
 /**
- * Gets the appropriate grey icon based on advertisement type
- * @param {string} advertisementType - The type of advertisement
- * @returns {L.DivIcon} The appropriate grey icon
+ * Creates a dynamic SVG marker icon with customizable color and shape
+ * @param {string} color - The fill color for the marker (e.g., '#7B7B7B', '#DC143C', '#228B22')
+ * @param {string} shape - The shape type: 'circle', 'rectangle', 'small-circle', or 'default'
+ * @returns {L.DivIcon} A Leaflet divIcon with SVG content
  */
-function getGreyIconByType(advertisementType) {
+function createMarkerIcon(color, shape = 'default') {
+  let innerShape = '';
+
+  switch (shape) {
+    case 'circle':
+    case 'maxi':
+      innerShape = '<circle cx="20" cy="20" r="13" fill="#FFFFFF" />';
+      break;
+    case 'rectangle':
+    case 'classic_keski':
+      innerShape = '<rect width="10" height="32" x="15" y="9" rx="5" ry="5" fill="#FFFFFF"/>';
+      break;
+    case 'small-circle':
+    case 'classic_single':
+      innerShape = '<circle cx="20" cy="20" r="6" fill="#FFFFFF" />';
+      break;
+    case 'default':
+    default:
+      innerShape = '<circle cx="20" cy="20" r="13" fill="#FFFFFF" />';
+      break;
+  }
+
+  return L.divIcon({
+    className: 'my-div-icon',
+    html: `<div>
+            <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">
+              <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"
+                fill="${color}"/>
+              ${innerShape}
+            </svg>
+          </div>`,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34]
+  });
+}
+
+// Define color constants for different marker types (updated to user-specified values)
+const MARKER_COLORS = {
+  BLUE: '#2A81CB',
+  GOLD: '#FFD326',
+  RED: '#CB2B3E',
+  GREEN: '#2AAD27',
+  ORANGE: '#CB8427',
+  YELLOW: '#CAC428',
+  VIOLET: '#9C2BCB',
+  GREY: '#7B7B7B'
+};
+
+/**
+ * Gets the appropriate marker icon based on advertisement type and color
+ * @param {string} advertisementType - The type of advertisement
+ * @param {string} color - The color for the marker
+ * @returns {L.DivIcon} The appropriate marker icon
+ */
+function getMarkerIcon(advertisementType, color = MARKER_COLORS.GREY) {
   switch (advertisementType) {
     case 'maxi':
-      return greyIconMaxi;
+      return createMarkerIcon(color, 'maxi');
     case 'classic_keski':
-      return greyIconClassicKeski;
+      return createMarkerIcon(color, 'classic_keski');
     case 'classic_single':
-      return greyIconClassicSingle;
+      return createMarkerIcon(color, 'classic_single');
     default:
-      return greyIcon;
+      return createMarkerIcon(color, 'default');
   }
 }
 
-const greenIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-});
+// Legacy function for backward compatibility with grey markers
+function getGreyIconByType(advertisementType) {
+  return getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
+}
 
-const redIcon = L.icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
-});
+/**
+ * Creates a marker icon for company layers with custom color
+ * This function can be used for different company types in the future
+ * @param {string} advertisementType - The type of advertisement
+ * @param {string} companyType - The type of company ('default', 'premium', 'partner', etc.)
+ * @returns {L.DivIcon} The appropriate company marker icon
+ */
+function getCompanyMarkerIcon(advertisementType, companyType = 'default') {
+  const companyColors = {
+    'default': MARKER_COLORS.RED,
+    'premium': MARKER_COLORS.ORANGE,
+    'partner': MARKER_COLORS.BLUE,
+    'special': MARKER_COLORS.PURPLE,
+    'visited': MARKER_COLORS.GREEN
+  };
+
+  const color = companyColors[companyType] || MARKER_COLORS.RED;
+  return getMarkerIcon(advertisementType, color);
+}
+
+/**
+ * Helper function to determine company type based on company data
+ * This can be extended in the future to support different company classifications
+ * @param {Object} companyData - The company data object
+ * @returns {string} The company type
+ */
+function getCompanyType(companyData) {
+  // Future implementation could check company properties like:
+  // - companyData.tier (premium, standard, basic)
+  // - companyData.partnership_level
+  // - companyData.subscription_type
+  // For now, return 'default' for all companies
+
+  // Suppress unused parameter warning for future implementation
+  void companyData;
+  return 'default';
+}
 
 // Global variables for map layer and settings
 let markersLayer; // Holds the marker cluster layer
@@ -644,19 +683,25 @@ function renderMapMarkers() {
         let popupContent = null;
         let isVisible = false;
 
+        // Determine the advertisement type for consistent shape across all marker types
+        const advertisementType = getAdvertisementType(place.name);
+
         if (status) { // If visited, always show as green
-            icon = greenIcon;
+            if (isCompanyLocation) {
+                icon = getCompanyMarkerIcon(advertisementType, 'visited');
+            } else {
+                icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREEN);
+            }
             isVisible = true;
             popupContent = createPopupContent(placeData, isCompanyLocation);
         } else { // If not visited
-            if (isCompanyLocation && showCompanyMarkers) { // Show as red if it's a company location and the filter is on
-                icon = redIcon;
+            if (isCompanyLocation && showCompanyMarkers) { // Show as company marker if it's a company location and the filter is on
+                const companyType = getCompanyType(placeData);
+                icon = getCompanyMarkerIcon(advertisementType, companyType);
                 isVisible = true;
                 popupContent = createPopupContent(placeData, true);
             } else if (showAllToggle) { // Show as grey if it's a base location and the filter is on
-                // Determine the advertisement type and use the appropriate grey icon
-                const advertisementType = getAdvertisementType(place.name);
-                icon = getGreyIconByType(advertisementType);
+                icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
                 isVisible = true;
                 popupContent = createPopupContent(placeData, false);
             }
