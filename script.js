@@ -432,11 +432,64 @@ function updateStatistics() {
   document.getElementById('progress-bar').style.width = `${progress}%`;
 }
 
+/**
+ * Determines the advertisement type from the item name
+ * @param {string} name - The name of the advertisement location
+ * @returns {string} The advertisement type: 'maxi', 'classic_keski', 'classic_single', or 'default'
+ */
+function getAdvertisementType(name) {
+  if (typeof name !== 'string') return 'default';
+
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes(' maxi')) {
+    return 'maxi';
+  } else if (lowerName.includes(' classic keski')) {
+    return 'classic_keski';
+  } else if (lowerName.includes(' classic single')) {
+    return 'classic_single';
+  }
+  return 'default';
+}
+
 // Create custom marker icons for different states
 // https://github.com/pointhi/leaflet-color-markers
-// <rect width="10" height="32" x="15" y="9" rx="5" ry="5" fill="#FFFFFF"/>\ for ' classic keski' type
-// <circle cx="20" cy="20" r="13" fill="#FFFFFF" />\ for ' maxi' type
-// <circle cx="20" cy="20" r="6" fill="#FFFFFF" />\ for ' classic single' type
+const greyIconMaxi = L.divIcon({
+  className: 'my-div-icon',
+  html: '<div>\
+          <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
+            <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
+              fill="#7B7B7B"/>\
+            <circle cx="20" cy="20" r="13" fill="#FFFFFF" />\
+          </svg>\
+        </div>',
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+});
+
+const greyIconClassicKeski = L.divIcon({
+  className: 'my-div-icon',
+  html: '<div>\
+          <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
+            <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
+              fill="#7B7B7B"/>\
+            <rect width="10" height="32" x="15" y="9" rx="5" ry="5" fill="#FFFFFF"/>\
+          </svg>\
+        </div>',
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+});
+
+const greyIconClassicSingle = L.divIcon({
+  className: 'my-div-icon',
+  html: '<div>\
+          <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
+            <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
+              fill="#7B7B7B"/>\
+            <circle cx="20" cy="20" r="6" fill="#FFFFFF" />\
+          </svg>\
+        </div>',
+  iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
+});
+
+// Default grey icon (fallback for unknown types)
 const greyIcon = L.divIcon({
   className: 'my-div-icon',
   html: '<div>\
@@ -448,6 +501,24 @@ const greyIcon = L.divIcon({
         </div>',
   iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
 });
+
+/**
+ * Gets the appropriate grey icon based on advertisement type
+ * @param {string} advertisementType - The type of advertisement
+ * @returns {L.DivIcon} The appropriate grey icon
+ */
+function getGreyIconByType(advertisementType) {
+  switch (advertisementType) {
+    case 'maxi':
+      return greyIconMaxi;
+    case 'classic_keski':
+      return greyIconClassicKeski;
+    case 'classic_single':
+      return greyIconClassicSingle;
+    default:
+      return greyIcon;
+  }
+}
 
 const greenIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
@@ -583,7 +654,9 @@ function renderMapMarkers() {
                 isVisible = true;
                 popupContent = createPopupContent(placeData, true);
             } else if (showAllToggle) { // Show as grey if it's a base location and the filter is on
-                icon = greyIcon;
+                // Determine the advertisement type and use the appropriate grey icon
+                const advertisementType = getAdvertisementType(place.name);
+                icon = getGreyIconByType(advertisementType);
                 isVisible = true;
                 popupContent = createPopupContent(placeData, false);
             }
@@ -813,7 +886,7 @@ function initializeApp() {
     
     // Render the map with existing data
     initializeMapWithFilteredData();
-    // testQueries();
+    testQueries();
   } else {
     // If no data exists, fetch it from the API
     renderData();
