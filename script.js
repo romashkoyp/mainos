@@ -101,10 +101,39 @@ async function renderData() {
     url = corsProxyUrl + encodeURIComponent(newUrl);
     renderData();
   } else {
+    localStorage.setItem('originalAllData', JSON.stringify(allData));
+    localStorage.setItem(dataManager.originalKey, JSON.stringify(allData));
     filterItems();
   }
 }
 
+// Function to test some queries from allData
+function testQueries() {
+  // Test 1: Find special type of advertisement
+  const placesByTypeOfAdvertisement = [];
+  const allData = JSON.parse(localStorage.getItem('originalAllData') || '[]');
+  allData.forEach(item => {
+    if (typeof item.name === 'string' && item.name.toLowerCase().includes(' maxi')) {
+      placesByTypeOfAdvertisement.push(item.name);
+    }
+  });
+  console.log('Places: ', placesByTypeOfAdvertisement);
+
+  // Test 2: Find all possible locations from the name field
+  if (allData.length === 0) return;
+
+  const uniqueLocations = new Set();
+  allData.forEach(item => {
+    if (typeof item.name === 'string') {
+      uniqueLocations.add(item.name.split(' ')[1].toLowerCase());
+    }
+  });
+
+  const locations = Array.from(uniqueLocations)
+    .filter(Boolean)
+    .map(str => str.charAt(0).toUpperCase() + str.slice(1));
+  console.log('Locations:', locations);
+}
 /**
  * Filters the fetched raw data to include only items from 'Jyväskylä'.
  * It then formats and stores this data in localStorage as the base layer.
@@ -424,11 +453,13 @@ const greyIcon = L.divIcon({
         </div>',
   iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
 });
+
 const greenIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-green.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
   iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34], shadowSize: [41, 41]
 });
+
 const redIcon = L.icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -787,7 +818,7 @@ function initializeApp() {
     
     // Render the map with existing data
     initializeMapWithFilteredData();
-
+    // testQueries();
   } else {
     // If no data exists, fetch it from the API
     renderData();
