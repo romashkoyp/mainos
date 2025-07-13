@@ -1,5 +1,3 @@
-// --- START OF FILE script.js ---
-
 // API Configuration
 const address = 'https://atlasmedia.mediani.fi/api/v1/public-map-point-markers/';
 const format = '/?format=json&page=';
@@ -436,19 +434,16 @@ function updateStatistics() {
 
 // Create custom marker icons for different states
 // https://github.com/pointhi/leaflet-color-markers
-
+// <rect width="10" height="32" x="15" y="9" rx="5" ry="5" fill="#FFFFFF"/>\ for ' classic keski' type
+// <circle cx="20" cy="20" r="13" fill="#FFFFFF" />\ for ' maxi' type
+// <circle cx="20" cy="20" r="6" fill="#FFFFFF" />\ for ' classic single' type
 const greyIcon = L.divIcon({
   className: 'my-div-icon',
   html: '<div>\
           <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">\
             <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"\
-              fill="#7B7B7B"\
-              stroke="#6B6B6B"\
-              stroke-width="2"/>\
-            <circle cx="20" cy="20" r="14"\
-              fill="#FFFFFF"\
-              stroke="#6B6B6B"\
-              stroke-width="2"/>\
+              fill="#7B7B7B"/>\
+            <circle cx="20" cy="20" r="13" fill="#FFFFFF" />\
           </svg>\
         </div>',
   iconSize: [25, 41], iconAnchor: [12, 41], popupAnchor: [1, -34]
