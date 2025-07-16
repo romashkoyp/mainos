@@ -25,13 +25,22 @@
         </button>
       </div>
       <div id="tracker-content">
-        <div class="progress-section">
-          <div class="progress-header">
-            <span>Progress:</span>
-            <span id="progress-percent">0%</span>
+        <div class="progress-stats-container">
+          <div class="progress-section">
+            <div class="progress-header">
+              <span>Progress:</span>
+              <span id="progress-percent">0%</span>
+            </div>
+            <div class="progress-bar-container">
+              <div id="progress-bar"></div>
+            </div>
           </div>
-          <div class="progress-bar-container">
-            <div id="progress-bar"></div>
+          <div class="stats-compact">
+            <div class="stats-row-compact">
+              <span>Total: <span id="total-count">0</span></span>
+              <span class="visited-text">Visited: <span id="visited-count" class="visited-count">0</span></span>
+              <span class="not-visited-text">Not Visited: <span id="not-visited-count" class="not-visited-count">0</span></span>
+            </div>
           </div>
         </div>
         <div class="city-filter-section">
@@ -40,9 +49,9 @@
             <option value="">All Cities</option>
           </select>
         </div>
-        <div class="grey-markers-toggle">
         <div id="campaign-info" class="campaign-info" style="display: none;">
         </div>
+        <div class="grey-markers-toggle">
           <label class="checkbox-label">
             <input
               type="checkbox"
@@ -51,27 +60,52 @@
               onchange="saveStateAndRender()"
               class="checkbox-input"
             />
-            <span>All markers</span>
+            <span>Base markers</span>
           </label>
+          <button onclick="refreshAllData()" class="btn btn-refresh" title="Reset base markers">
+            <i class="fas fa-sync-alt"></i> Reset
+          </button>
+          <button onclick="toggleLegend()" class="btn btn-legend" title="Show/Hide marker legend">
+            <i class="fas fa-map-marker-alt"></i> Legend
+          </button>
         </div>
-        <div id="stats">
-          <div class="stats-row">
-            <span>Total Locations:</span>
-            <span id="total-count">0</span>
+        <div id="marker-legend" class="marker-legend" style="display: none;">
+          <div class="legend-header">
+            <span>Marker Types</span>
           </div>
-          <div class="stats-row">
-            <span class="visited-text">Visited:</span>
-            <span id="visited-count" class="visited-count">0</span>
+          <div class="legend-items">
+            <div class="legend-item">
+              <div class="legend-marker" id="legend-maxi"></div>
+              <span>Maxi</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-marker" id="legend-classic-keski"></div>
+              <span>Classic Keski</span>
+            </div>
+            <div class="legend-item">
+              <div class="legend-marker" id="legend-classic-single"></div>
+              <span>Classic Single</span>
+            </div>
           </div>
-          <div class="stats-row">
-            <span class="not-visited-text">Not Visited:</span>
-            <span id="not-visited-count" class="not-visited-count">0</span>
+          <div class="legend-colors">
+            <div class="legend-color-item">
+              <div class="legend-color-marker" style="background-color: #7B7B7B;"></div>
+              <span>Base locations (grey)</span>
+            </div>
+            <div class="legend-color-item">
+              <div class="legend-color-marker" style="background-color: #CB2B3E;"></div>
+              <span>Campaign locations (any color)</span>
+            </div>
+            <div class="legend-color-item">
+              <div class="legend-color-marker" style="background-color: #2AAD27;"></div>
+              <span>Visited locations (green)</span>
+            </div>
           </div>
         </div>
         <div class="campaign-input-section">
           <div class="input-group">
             <input type="text" id="campaign-id-input" class="campaign-input" placeholder="Campaign ID" value="af79ad25-1bc0-4451-a8bc-600d12b36a68">
-            <button onclick="loadCampaignData()" class="btn btn-warning">Load</button>
+            <button onclick="loadCampaignData(event)" class="btn btn-warning">Load</button>
           </div>
         </div>
         <div class="button-container">

@@ -618,21 +618,55 @@ async function processCampaignData() {
  * Handles the "Load" button click. It reads the campaign ID from the input,
  * updates the API URL, and initiates the fetch process.
  */
-function loadCampaignData() {
+async function loadCampaignData(event) {
   const inputElement = document.getElementById('campaign-id-input');
   const inputCampaignId = inputElement.value.trim();
-  
+
   if (!inputCampaignId) {
     alert('Please enter a Campaign ID');
     return;
   }
-  
-  campaignId = inputCampaignId;
-  campaignUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + campaignId + '/?format=json';
-  urlCampaign = corsProxyUrl + encodeURIComponent(campaignUrl);
-  
-  inputElement.value = '';
-  processCampaignData();
+
+  // Check if campaign already exists in IndexedDB
+  const existingMarkers = await dataManager.getCampaignMarkers(inputCampaignId);
+  if (existingMarkers.length > 0) {
+    const campaignName = existingMarkers[0].campaignName || inputCampaignId.substring(0, 8);
+    const confirmed = confirm(
+      `Campaign "${campaignName}" (ID: ${inputCampaignId.substring(0, 8)}) already exists in the database.\n` +
+      'Do you want to overwrite the existing data for this campaign?'
+    );
+    if (!confirmed) {
+      return;
+    }
+  }
+
+  // Show loading state
+  const loadButton = event.target;
+  const originalText = loadButton.innerHTML;
+  loadButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+  loadButton.disabled = true;
+
+  try {
+    campaignId = inputCampaignId;
+    campaignUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + campaignId + '/?format=json';
+    urlCampaign = corsProxyUrl + encodeURIComponent(campaignUrl);
+
+    inputElement.value = '';
+
+    // Wait for campaign data to fully load
+    await processCampaignData();
+
+    // Ensure statistics are updated after data loads
+    await updateStatistics();
+
+  } catch (error) {
+    console.error('Error loading campaign data:', error);
+    alert('Error loading campaign data. Please try again.');
+  } finally {
+    // Restore button state
+    loadButton.innerHTML = originalText;
+    loadButton.disabled = false;
+  }
 }
 
 // Map Initialization
@@ -1256,17 +1290,10 @@ function updateCampaignUI() {
     `;
   });
 
-  campaignHTML += `
-    <div class="campaign-actions">
-      <button id="clear-all-campaigns" class="btn-clear-all">Clear All</button>
-    </div>
-  </div>`;
+  campaignHTML += `</div>`;
 
   campaignInfoElement.innerHTML = campaignHTML;
   campaignInfoElement.style.display = 'block';
-
-  // Add event listener for clear all button
-  document.getElementById('clear-all-campaigns').addEventListener('click', clearAllCampaigns);
 }
 
 /**
@@ -1285,6 +1312,13 @@ function toggleCampaignVisibility(campaignId, visible) {
  * @param {string} campaignId - The campaign ID to clear
  */
 async function clearSpecificCampaign(campaignId) {
+  const campaign = campaignManager.campaigns.get(campaignId);
+  const campaignName = campaign ? campaign.name : campaignId.substring(0, 8);
+
+  if (!confirm(`Are you sure you want to clear campaign "${campaignName}"? This action cannot be undone.`)) {
+    return;
+  }
+
   try {
     await dataManager.clearCampaignData(campaignId);
     campaignManager.removeCampaign(campaignId);
@@ -1313,6 +1347,81 @@ async function clearAllCampaigns() {
     console.error('Error clearing all campaigns:', error);
     alert('Error clearing campaign data. Please try again.');
   }
+}
+
+/**
+ * Refreshes all marker data by clearing local storage and refetching from API
+ */
+async function refreshAllData() {
+  if (!confirm('Are you sure you want to refresh all data? This will clear all local data and refetch from the server. This action cannot be undone.')) {
+    return;
+  }
+
+  try {
+    // Clear all local data
+    await db.allMarkers.clear();
+    // await dataManager.clearAllCampaignData();
+    // campaignManager.clearAllCampaigns();
+
+    // Clear arrays
+    // allData.length = 0;
+    // filteredData.length = 0;
+    allCampaignData.length = 0;
+    filteredCampaignData.length = 0;
+
+    // Reset page counter
+    page = 1;
+    url = corsProxyUrl + encodeURIComponent(originalUrl);
+
+    // Update UI
+    // updateCampaignUI();
+
+    // Refetch data from API
+    await renderData();
+    updateStatistics();
+
+    console.log('All data refreshed successfully');
+  } catch (error) {
+    console.error('Error refreshing data:', error);
+    alert('Error refreshing data. Please try again.');
+  }
+}
+
+/**
+ * Toggles the visibility of the marker legend
+ */
+function toggleLegend() {
+  const legend = document.getElementById('marker-legend');
+  const isVisible = legend.style.display !== 'none';
+
+  if (isVisible) {
+    legend.style.display = 'none';
+  } else {
+    legend.style.display = 'block';
+    initializeLegendMarkers();
+  }
+}
+
+/**
+ * Initializes the legend markers with proper icons
+ */
+function initializeLegendMarkers() {
+  const markerTypes = ['maxi', 'classic_keski', 'classic_single'];
+
+  markerTypes.forEach(type => {
+    const legendElement = document.getElementById(`legend-${type.replace('_', '-')}`);
+    if (legendElement) {
+      const icon = getMarkerIcon(type, MARKER_COLORS.GREY);
+      // Set the icon HTML
+      legendElement.innerHTML = icon.options.html;
+      // Find the SVG and resize it for the legend
+      const svg = legendElement.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('width', '15');
+        svg.setAttribute('height', '25');
+      }
+    }
+  });
 }
 
 /**
@@ -1441,7 +1550,7 @@ async function initializeApp() {
   const clusteringToggle = document.getElementById('clustering-toggle');
   const clusteringEnabled = savedFilters.clusteringEnabled !== undefined ? savedFilters.clusteringEnabled : true;
   clusteringToggle.checked = clusteringEnabled;
-  clusterRadius = clusteringEnabled ? 70 : 0;
+  clusterRadius = clusteringEnabled ? 50 : 0;
 
   try {
     // Check if base data already exists in IndexedDB
@@ -1527,31 +1636,60 @@ async function importData(event) {
   const file = event.target.files[0];
   if (!file) return;
 
+  if (!confirm('Are you sure you want to import data? This will completely replace all existing data. This action cannot be undone.')) {
+    event.target.value = '';
+    return;
+  }
+
   try {
     const text = await file.text();
     const importData = JSON.parse(text);
 
-    if (importData.allMarkers) {
-      await db.allMarkers.clear();
+    // Validate the import data structure
+    if (!importData.allMarkers && !importData.campaignMarkers) {
+      throw new Error('Invalid file format: No marker data found');
+    }
+
+    // Clear all existing data first
+    await db.allMarkers.clear();
+    await db.markersCampaigns.clear();
+    campaignManager.clearAllCampaigns();
+
+    // Clear in-memory arrays
+    allData.length = 0;
+    filteredData.length = 0;
+    allCampaignData.length = 0;
+    filteredCampaignData.length = 0;
+
+    // Import new data
+    if (importData.allMarkers && importData.allMarkers.length > 0) {
       await db.allMarkers.bulkAdd(importData.allMarkers);
+      allData.push(...importData.allMarkers);
     }
 
-    if (importData.campaignMarkers) {
-      await db.markersCampaigns.clear();
+    if (importData.campaignMarkers && importData.campaignMarkers.length > 0) {
       await db.markersCampaigns.bulkAdd(importData.campaignMarkers);
-    }
 
-    // Re-render the map with imported data
-    renderMapMarkers();
-
-    // Update campaign info if available
-    const campaignIds = await dataManager.getAllCampaignIds();
-    if (campaignIds.length > 0) {
-      const firstCampaignMarkers = await dataManager.getCampaignMarkers(campaignIds[0]);
-      if (firstCampaignMarkers.length > 0) {
-        displayCampaignInfo(firstCampaignMarkers[0].campaignName);
+      // Rebuild campaign manager from imported data
+      const campaignIds = [...new Set(importData.campaignMarkers.map(m => m.campaignId))];
+      for (const campaignId of campaignIds) {
+        const campaignMarkers = importData.campaignMarkers.filter(m => m.campaignId === campaignId);
+        if (campaignMarkers.length > 0) {
+          const firstMarker = campaignMarkers[0];
+          campaignManager.addCampaign(
+            campaignId,
+            firstMarker.campaignName,
+            firstMarker.campaignDescription
+          );
+        }
       }
     }
+
+    // Reinitialize the application state
+    await initializeCityFilter();
+    updateCampaignUI();
+    renderMapMarkers();
+    updateStatistics();
 
     console.log('Data imported successfully');
     alert('Data imported successfully!');

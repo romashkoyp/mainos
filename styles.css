@@ -72,11 +72,17 @@ html, body {
   color: #6c757d;
 }
 
-/* Progress section */
-.progress-section {
+/* Progress and stats container */
+.progress-stats-container {
   background: #f8f9fa;
   padding: 8px;
   border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+/* Progress section */
+.progress-section {
+  margin-bottom: 8px;
 }
 
 .progress-header {
@@ -97,6 +103,23 @@ html, body {
   border-radius: 4px;
   width: 0%;
   transition: width 0.3s ease;
+}
+
+/* Compact statistics */
+.stats-compact {
+  margin-top: 8px;
+}
+
+.stats-row-compact {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stats-row-compact > span {
+  white-space: nowrap;
 }
 
 /* Button container */
@@ -233,8 +256,30 @@ html, body {
   padding: 8px;
   background-color: #f8f9fa;
   border-radius: 4px;
-  max-height: 300px;
+  max-height: 250px;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #6c757d #f8f9fa; /* Firefox */
+}
+
+/* Webkit scrollbar styling */
+.campaign-info::-webkit-scrollbar {
+  width: 6px;
+}
+
+.campaign-info::-webkit-scrollbar-track {
+  background: #f8f9fa;
+  border-radius: 3px;
+}
+
+.campaign-info::-webkit-scrollbar-thumb {
+  background: #6c757d;
+  border-radius: 3px;
+}
+
+.campaign-info::-webkit-scrollbar-thumb:hover {
+  background: #495057;
 }
 
 .campaigns-container {
@@ -289,26 +334,7 @@ html, body {
   opacity: 0.8;
 }
 
-.campaign-actions {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #dee2e6;
-}
 
-.btn-clear-all {
-  background-color: #dc3545;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  width: 100%;
-}
-
-.btn-clear-all:hover {
-  background-color: #c82333;
-}
 
 /* Legacy styles for backward compatibility */
 .campaign-info-content {
@@ -368,11 +394,121 @@ html, body {
   padding: 8px;
   background-color: #f8f9fa;
   border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .grey-markers-toggle .checkbox-label {
   font-size: 12px;
   margin: 0;
+}
+
+/* Refresh button */
+.btn-refresh {
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.btn-refresh:hover {
+  background-color: #138496;
+}
+
+.btn-refresh i {
+  font-size: 10px;
+}
+
+/* Legend button */
+.btn-legend {
+  background-color: #6f42c1;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.btn-legend:hover {
+  background-color: #5a2d91;
+}
+
+.btn-legend i {
+  font-size: 10px;
+}
+
+/* Marker legend */
+.marker-legend {
+  margin-bottom: 15px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  border: 1px solid #dee2e6;
+}
+
+.legend-header {
+  font-weight: bold;
+  font-size: 12px;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.legend-items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.legend-marker {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.legend-colors {
+  border-top: 1px solid #dee2e6;
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.legend-color-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.legend-color-marker {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid #000;
 }
 
 /* Header with minimize button */
@@ -476,14 +612,45 @@ html, body {
     width: auto; /* Let left/right define the width */
     margin: 0 auto; /* Center the panel */
     max-width: 400px; /* Stop it from getting too wide on tablets */
-    
+
     max-height: 85vh; /* Ensure it's never taller than 85% of the screen */
     overflow-y: auto; /* Make the panel itself scrollable if content overflows */
   }
 
   /* When minimized on mobile, remove scrolling and ensure it's small */
   #container.container-minimized {
-    overflow-y: hidden; 
+    overflow-y: hidden;
     max-height: 60px; /* A fixed small height for the header */
+  }
+
+  /* Campaign list mobile improvements */
+  .campaign-info {
+    max-height: 200px; /* Smaller height on mobile */
+  }
+
+  .legend-items {
+    grid-template-columns: 1fr; /* Single column on mobile */
+  }
+
+  .stats-row-compact {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 1em;
+    align-items: center;
+    justify-content: space-between;
+    white-space: nowrap;
+  }
+
+  .stats-row-compact > span {
+    flex-shrink: 0;
+  }
+
+  .grey-markers-toggle {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow-x: auto;
   }
 }
