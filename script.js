@@ -348,13 +348,6 @@ function clearCampaignData() {
 }
 
 /**
- * Initializes the map view with data already present in localStorage.
- */
-function initializeMapWithFilteredData() {
-  renderMapMarkers();
-}
-
-/**
  * Finds a marker by its ID and opens its popup, zooming to it if necessary.
  * This is useful for re-opening a popup after re-rendering the map.
  * @param {number} locationId - The ID of the location whose popup should be opened.
@@ -865,22 +858,23 @@ function initializeApp() {
   clusterSlider.value = clusterRadius;
   clusterValueSpan.textContent = clusterRadius;
 
-  // Check if base data already exists
-  if (localStorage.getItem(dataManager.originalKey)) {
-    // If so, check for campaign data and display info if present
-    const campaignData = JSON.parse(localStorage.getItem(dataManager.campaignModifiedKey) || '[]');
-    if (campaignData.length > 0 && campaignData[0].campaignName) {
-      displayCampaignInfo(campaignData[0].campaignName);
+  // Check if base data already exists in IndexedDB
+  db.allMarkers.count().then(count => {
+    if (count > 0) {
+      // If so, check for campaign info
+      // const campaignData = JSON.parse(localStorage.getItem(dataManager.campaignModifiedKey) || '[]');
+      // if (campaignData.length > 0 && campaignData[0].campaignName) {
+      //   displayCampaignInfo(campaignData[0].campaignName);
+      // } else {
+      //   const campaignInfoElement = document.getElementById('campaign-info');
+      //   if (campaignInfoElement) campaignInfoElement.style.display = 'none';
+      // }
+
+      // Render the map with existing data
+      renderMapMarkers();
     } else {
-       const campaignInfoElement = document.getElementById('campaign-info');
-       if (campaignInfoElement) campaignInfoElement.style.display = 'none';
+      // If no data exists, fetch it from the API
+      renderData();
     }
-    
-    // Render the map with existing data
-    initializeMapWithFilteredData();
-    // testQueries();
-  } else {
-    // If no data exists, fetch it from the API
-    renderData();
-  }
+  });
 }
