@@ -34,6 +34,12 @@
             <div id="progress-bar"></div>
           </div>
         </div>
+        <div class="city-filter-section">
+          <label for="city-filter-dropdown">Filter by City:</label>
+          <select id="city-filter-dropdown" onchange="applyCityFilter(this.value)" class="city-filter-select">
+            <option value="">All Cities</option>
+          </select>
+        </div>
         <div class="grey-markers-toggle">
         <div id="campaign-info" class="campaign-info" style="display: none;">
         </div>
@@ -79,17 +85,17 @@
           </label>
         </div>
         <div class="control-section">
-          <div class="slider-container">
-            <label for="cluster-radius-slider">Cluster Radius: <span id="cluster-radius-value">70</span>px</label>
-            <input 
-              type="range" 
-              id="cluster-radius-slider" 
-              min="0" 
-              max="150" 
-              step="10" 
-              value="70"
-              oninput="updateClusterRadius(this.value)"
-            >
+          <div class="clustering-toggle">
+            <label class="checkbox-label">
+              <input
+                type="checkbox"
+                id="clustering-toggle"
+                checked
+                onchange="toggleClustering(this.checked)"
+                class="checkbox-input"
+              />
+              <span>Clustering markers</span>
+            </label>
           </div>
         </div>
       </div>

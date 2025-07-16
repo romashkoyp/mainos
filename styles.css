@@ -233,8 +233,84 @@ html, body {
   padding: 8px;
   background-color: #f8f9fa;
   border-radius: 4px;
+  max-height: 300px;
+  overflow-y: auto;
 }
 
+.campaigns-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.campaign-item {
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 6px;
+  background-color: white;
+}
+
+.campaign-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.campaign-info-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.campaign-name {
+  font-weight: bold;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.campaign-id {
+  color: #6c757d;
+  font-size: 10px;
+}
+
+.campaign-clear-btn {
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.campaign-clear-btn:hover {
+  opacity: 0.8;
+}
+
+.campaign-actions {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #dee2e6;
+}
+
+.btn-clear-all {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.btn-clear-all:hover {
+  background-color: #c82333;
+}
+
+/* Legacy styles for backward compatibility */
 .campaign-info-content {
   display: flex;
   align-items: center;
@@ -246,11 +322,6 @@ html, body {
   color: #dc3545;
 }
 
-.campaign-name {
-  display: flex;
-  flex-direction: column;
-}
-
 .red-marker-indicator {
   background-color: #dc3545;
   color: white;
@@ -258,6 +329,37 @@ html, body {
   border-radius: 3px;
   font-size: 12px;
   margin-left: auto;
+}
+
+/* City filter section */
+.city-filter-section {
+  margin-bottom: 15px;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.city-filter-section label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #333;
+}
+
+.city-filter-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 12px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.city-filter-select:focus {
+  outline: none;
+  border-color: #007bff;
 }
 
 /* Grey red markers toggle */
@@ -320,6 +422,20 @@ html, body {
   display: none;
 }
 
+/* Clustering toggle */
+.clustering-toggle {
+  margin: 10px 0;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 4px;
+}
+
+.clustering-toggle .checkbox-label {
+  font-size: 12px;
+  margin: 0;
+}
+
+/* Legacy slider styles (kept for backward compatibility) */
 .slider-container {
   margin: 10px 0;
 }
