@@ -476,26 +476,26 @@ function createMarkerIcon(color, shape = 'default') {
   });
 }
 
-// Define color constants for different marker types (updated to user-specified values)
+// Define color constants for different campaign IDs
 const MARKER_COLORS = {
   BLUE: '#2A81CB',
   GOLD: '#FFD326',
   RED: '#CB2B3E',
-  GREEN: '#2AAD27',
+  GREEN: '#2AAD27', // only for visited markers
   ORANGE: '#CB8427',
   YELLOW: '#CAC428',
   VIOLET: '#9C2BCB',
-  GREY: '#7B7B7B'
+  GREY: '#7B7B7B' // default color for base locations
 };
 
 /**
- * Gets the appropriate marker icon based on advertisement type and color
- * @param {string} advertisementType - The type of advertisement
+ * Gets the appropriate marker icon based on campaign ID and color
+ * @param {string} campaignId - Campaign ID
  * @param {string} color - The color for the marker
  * @returns {L.DivIcon} The appropriate marker icon
  */
-function getMarkerIcon(advertisementType, color = MARKER_COLORS.GREY) {
-  switch (advertisementType) {
+function getMarkerIcon(campaignId, color = MARKER_COLORS.GREY) {
+  switch (campaignId) {
     case 'maxi':
       return createMarkerIcon(color, 'maxi');
     case 'classic_keski':
@@ -508,18 +508,18 @@ function getMarkerIcon(advertisementType, color = MARKER_COLORS.GREY) {
 }
 
 // Legacy function for backward compatibility with grey markers
-function getGreyIconByType(advertisementType) {
-  return getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
+function getGreyIconByType(campaignId) {
+  return getMarkerIcon(campaignId, MARKER_COLORS.GREY);
 }
 
 /**
  * Creates a marker icon for campaign layers with custom color
- * This function can be used for different campaign types in the future
- * @param {string} advertisementType - The type of advertisement
- * @param {string} campaignType - The type of campaign ('default', 'premium', 'partner', etc.)
+ * This function can be used for different campaign IDs
+ * @param {string} campaignId - Campaign ID
+ * @param {string} campaignType - The type of campaign ('ID1', 'ID2', etc.)
  * @returns {L.DivIcon} The appropriate campaign marker icon
  */
-function getCampaignMarkerIcon(advertisementType, campaignType = 'default') {
+function getCampaignMarkerIcon(campaignId, campaignType = 'default') {
   const campaignColors = {
     'default': MARKER_COLORS.RED,
     'premium': MARKER_COLORS.ORANGE,
@@ -529,7 +529,7 @@ function getCampaignMarkerIcon(advertisementType, campaignType = 'default') {
   };
 
   const color = campaignColors[campaignType] || MARKER_COLORS.RED;
-  return getMarkerIcon(advertisementType, color);
+  return getMarkerIcon(campaignId, color);
 }
 
 /**
@@ -625,33 +625,8 @@ function createPopupContent(placeData, isCampaign) {
 
 /**
  * The main rendering function. It clears existing markers from the map and adds new ones
- * based on the current data and filter settings.
  */
 function renderMapMarkers() {
-    
-    // Fetch all markers from IndexedDB and store in an array
-    const allBaseLocations = [];
-    db.allMarkers.each(item => allBaseLocations.push(item)).then(() => {
-      console.log('All markers loaded from IndexedDB');
-    }).catch(e => {
-      console.log(`Error: ${e}`);
-    });
-
-    // const allBaseLocations = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
-    // const campaignLocations = JSON.parse(localStorage.getItem(dataManager.campaignModifiedKey) || '[]');
-    // const showAllToggle = document.getElementById('grey-markers-toggle').checked;
-    
-    // const campaignToggle = document.getElementById('campaign-markers-toggle');
-    // const showCampaignMarkers = campaignToggle ? campaignToggle.checked : false;
-
-    if (allBaseLocations.length === 0) {
-        alert('No data available. Please reload the page.');
-        return;
-      }
-
-    // Create a Map for quick lookup of campaign locations by ID
-    // const campaignDataMap = new Map(campaignLocations.map(item => [item.id, item]));
-
     // Remove old layer and create a new one with the current cluster radius
     if (markersLayer) map.removeLayer(markersLayer);
     markersLayer = L.markerClusterGroup({
@@ -661,51 +636,35 @@ function renderMapMarkers() {
         zoomToBoundsOnClick: true
     });
 
-    // Iterate through all base locations to decide how to render each one
-    allBaseLocations.forEach(place => {
-        // const status = dataManager.getStatus(place.id);
-        // const isCampaignLocation = campaignDataMap.has(place.id);
-        // const placeData = isCampaignLocation ? campaignDataMap.get(place.id) : place;
-
-        let icon = null;
-        let popupContent = null;
-        let isVisible = false;
-
-        // Determine the advertisement type for consistent shape across all marker types
-        const advertisementType = getAdvertisementType(place.name);
-
-        // if (status) { // If visited, always show as green
-        //     if (isCampaignLocation) {
-        //         icon = getCampaignMarkerIcon(advertisementType, 'visited');
-        //     } else {
-        //         icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREEN);
-        //     }
-        //     isVisible = true;
-        //     popupContent = createPopupContent(placeData, isCampaignLocation);
-        // } else { // If not visited
-        //     if (isCampaignLocation && showCampaignMarkers) { // Show as campaign marker if it's a campaign location and the filter is on
-        //         const campaignType = getCampaignType(placeData);
-        //         icon = getCampaignMarkerIcon(advertisementType, campaignType);
-        //         isVisible = true;
-        //         popupContent = createPopupContent(placeData, true);
-        //     } else if (showAllToggle) { // Show as grey if it's a base location and the filter is on
-        //         icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
-        //         isVisible = true;
-        //         popupContent = createPopupContent(placeData, false);
-        //     }
-        // }
-
-        if (isVisible) {
-            let marker = L.marker([place.lat, place.lng], { icon: icon });
-            marker.locationId = place.id; // Store ID on marker for easy access
-            marker.placeData = placeData; // Store the full data object for easy access later
-            marker.bindPopup(() => popupContent); // Use a function to generate popup content on-demand
-            markersLayer.addLayer(marker);
+    // Fetch all base markers from IndexedDB
+    db.allMarkers.toArray().then(allBaseLocations => {
+        if (!allBaseLocations || allBaseLocations.length === 0) {
+            alert('No base location data available. Please reload the page.');
+            return;
         }
-    });
 
-    map.addLayer(markersLayer);
-    // updateStatistics();
+        allBaseLocations.forEach(place => {
+            // Only render grey markers for base locations
+            const advertisementType = getAdvertisementType(place.name);
+            const icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
+
+            // Minimal popup for base marker
+            const popupContent = `
+                <div class="popup-content">
+                    <h3>${place.name}</h3>
+                </div>
+            `;
+
+            const marker = L.marker([place.lat, place.lng], { icon });
+            marker.locationId = place.id;
+            marker.bindPopup(popupContent);
+            markersLayer.addLayer(marker);
+        });
+
+        map.addLayer(markersLayer);
+    }).catch(e => {
+        console.log(`Error loading markers from IndexedDB: ${e}`);
+    });
 }
 
 /**
