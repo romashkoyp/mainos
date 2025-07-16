@@ -7,16 +7,23 @@ const originalUrl = address + id + format + page;
 const corsProxyUrl = 'https://corsproxy.io/?';
 let url = corsProxyUrl + encodeURIComponent(originalUrl);
 
-// let companyId = 'af79ad25-1bc0-4451-a8bc-600d12b36a68';
-let companyId = null;
-let companyUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + companyId + '/?format=json'
-let urlCompany = corsProxyUrl + encodeURIComponent(companyUrl);
+// let campaignId = 'af79ad25-1bc0-4451-a8bc-600d12b36a68';
+let campaignId = null;
+let campaignUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + campaignId + '/?format=json'
+let urlCampaign = corsProxyUrl + encodeURIComponent(campaignUrl);
 
 // Data storage arrays
 const allData = []; // Stores all raw data fetched from the base API
 const filteredData = []; // Stores data filtered for a specific city (e.g., 'Jyväskylä')
-const allCompanyData = []; // Stores raw data fetched from the company-specific API
-const filteredCompanyData = []; // Stores company locations that match the base locations
+const allCampaignData = []; // Stores raw data fetched from the campaign-specific API
+const filteredCampaignData = []; // Stores campaign locations that match the base locations
+
+// Initialize IndexedDB database and tables
+const db = new Dexie('MainosDB');
+db.version(1).stores({
+  allMarkers: 'id, name, lat, lng',
+  markersCampaigns: '[campaignId+markerId], campaignName, campaignDescription, campaignStartDate, campaignEndDate, markerName, markerLat, markerLng, markerVisited, markerDateVisited'
+});
 
 /**
  * Manages saving and loading user preferences (map view and filters) to/from localStorage.
@@ -56,11 +63,11 @@ class UserPreferencesManager {
      */
     saveFilterState() {
         const greyToggle = document.getElementById('grey-markers-toggle');
-        const companyToggle = document.getElementById('company-markers-toggle');
+        const campaignToggle = document.getElementById('campaign-markers-toggle');
         const clusterSlider = document.getElementById('cluster-radius-slider');
         const filterState = {
             showAll: greyToggle ? greyToggle.checked : true,
-            showCompany: companyToggle ? companyToggle.checked : true,
+            showCampaign: campaignToggle ? campaignToggle.checked : true,
             clusterRadius: clusterSlider ? clusterSlider.value : 70,
         };
         localStorage.setItem(this.filtersKey, JSON.stringify(filterState));
@@ -72,7 +79,7 @@ class UserPreferencesManager {
      */
     loadFilterState() {
         const savedState = localStorage.getItem(this.filtersKey);
-        return savedState ? JSON.parse(savedState) : { showAll: true, showCompany: true, clusterRadius: 70 };
+        return savedState ? JSON.parse(savedState) : { showAll: true, showCampaign: true, clusterRadius: 70 };
     }
 }
 const prefsManager = new UserPreferencesManager();
@@ -99,9 +106,18 @@ async function renderData() {
     url = corsProxyUrl + encodeURIComponent(newUrl);
     renderData();
   } else {
-    localStorage.setItem('originalAllData', JSON.stringify(allData));
-    localStorage.setItem(dataManager.originalKey, JSON.stringify(allData));
-    filterItems();
+    // Store allData in IndexedDB
+    db.allMarkers.bulkAdd(allData.map(item => ({
+      id: item.id,
+      name: item.name,
+      lat: item.lat,
+      lng: item.lng
+    }))).then(() => {
+      console.log('All data added to IndexedDB');
+    }).catch(e => {
+      console.log(`Error: ${e}`);
+    });
+    renderMapMarkers();
   }
 }
 
@@ -132,35 +148,14 @@ function testQueries() {
     .map(str => str.charAt(0).toUpperCase() + str.slice(1));
   console.log('Locations:', locations);
 }
-/**
- * Filters the fetched raw data to include only items from 'Jyväskylä'.
- * It then formats and stores this data in localStorage as the base layer.
- */
-function filterItems() {
-  filteredData.length = 0;
-  filteredData.push(...allData.filter(item => item.name.includes('Jyväskylä')));
-
-  const dataWithStatus = filteredData.map(place => ({
-    id: place.id,
-    lat: parseFloat(place.lat),
-    lng: parseFloat(place.lng),
-    name: place.name,
-    status: false
-  }));
-
-  localStorage.setItem(dataManager.originalKey, JSON.stringify(dataWithStatus));
-  localStorage.setItem(dataManager.modifiedKey, JSON.stringify(dataWithStatus));
-
-  renderMapMarkers();
-}
 
 /**
- * Fetches location data for a specific company from the API.
+ * Fetches location data for a specific campaign from the API.
  * @returns {Promise<Object>} A promise that resolves to the JSON data from the API.
  */
-const fetchCompanyData = async () => {
-  const response = await fetch(urlCompany);
-  console.log(response);
+const fetchCampaignData = async () => {
+  const response = await fetch(urlCampaign);
+  // console.log(response);
   if (!response.ok) {
     alert(`Failed to get data. Status: ${response.status}`);
     return;
@@ -169,86 +164,59 @@ const fetchCompanyData = async () => {
 };
 
 /**
- * Initiates the fetching and processing of company-specific data.
+ * Initiates the fetching and processing of campaign-specific data.
  */
-async function processCompanyData() {
-  const data = await fetchCompanyData();
+async function processCampaignData() {
+  const data = await fetchCampaignData();
   if (!data) return;
-  allCompanyData.length = 0;
-  filteredCompanyData.length = 0;
-  localStorage.removeItem(dataManager.companyModifiedKey);
-  allCompanyData.push(data);
-  combineData();
-}
+  allCampaignData.length = 0;
+  allCampaignData.push(data);
+  const campaignApiData = allCampaignData[0];
 
-/**
- * Combines the base location data with the fetched company data.
- * It finds matching locations and creates a new dataset with enriched company information.
- */
-function combineData() {
-  filteredCompanyData.length = 0;
-  const companyApiData = allCompanyData[0];
-  const allBaseLocations = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
-
-  if (companyApiData && companyApiData.reserved_resources) {
-    companyApiData.reserved_resources.forEach(resource => {
+  if (campaignApiData && campaignApiData.reserved_resources) {
+    campaignApiData.reserved_resources.forEach(resource => {
       if (resource.inventory_resource && resource.inventory_resource.map_point_markers) {
         resource.inventory_resource.map_point_markers.forEach(marker => {
-          const matchingItem = allBaseLocations.find(item => item.id === marker.id);
-          // Create a new object with the combined data
-          // with structure as 
-          // [
-          //   af79ad25-1bc0-4451-a8bc-600d12b36a68, [{...}, {...}, ...],
-          //   b991ea3d-2d1b-4afb-af41-5ba57d3e57ea, [{...}, {...}, ...]
-          // ]
-          if (matchingItem) {
-            filteredCompanyData.push({
-              id: marker.id,
-              name: matchingItem.name,
-              lat: matchingItem.lat,
-              lng: matchingItem.lng,
-              startDate: resource.start_date,
-              endDate: resource.end_date,
-              companyName: companyApiData.name,
-              companyDescription: companyApiData.description,
-              isCompanyLocation: true,
-              status: dataManager.getStatus(marker.id)
-            });
-          }
+          // Add campaign data to IndexedDB markersCampaigns table
+          db.markersCampaigns.add({
+            campaignId: campaignApiData.id,
+            markerId: marker.id,
+            markerName: marker.name,
+            markerLat: marker.lat,
+            markerLng: marker.lng,
+            campaignStartDate: resource.start_date,
+            campaignEndDate: resource.end_date,
+            campaignName: campaignApiData.name,
+            campaignDescription: campaignApiData.description,
+            markerVisited: false,
+            markerDateVisited: null
+          });
         });
       }
     });
-
-    localStorage.setItem(dataManager.companyModifiedKey, JSON.stringify(filteredCompanyData));
-    
-    if (filteredCompanyData.length > 0) {
-      displayCompanyInfo(companyApiData.name);
-      renderMapMarkers();
-    } else {
-      alert('No matching locations found for this company');
-    }
-  }
+    console.log(`Campaign data for ${campaignApiData.id} added to IndexedDB`);
+  };
 }
 
 /**
- * Handles the "Load" button click. It reads the company ID from the input,
- * clears previous company data, and initiates the fetch process.
+ * Handles the "Load" button click. It reads the campaign ID from the input,
+ * clears previous campaign data, and initiates the fetch process.
  */
-function loadCompanyData() {
-  const inputElement = document.getElementById('company-id-input');
-  const inputCompanyId = inputElement.value.trim();
+function loadCampaignData() {
+  const inputElement = document.getElementById('campaign-id-input');
+  const inputCampaignId = inputElement.value.trim();
   
-  if (!inputCompanyId) {
-    alert('Please enter a Company ID');
+  if (!inputCampaignId) {
+    alert('Please enter a Campaign ID');
     return;
   }
   
-  companyId = inputCompanyId;
-  companyUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + companyId + '/?format=json';
-  urlCompany = corsProxyUrl + encodeURIComponent(companyUrl);
+  campaignId = inputCampaignId;
+  campaignUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + campaignId + '/?format=json';
+  urlCampaign = corsProxyUrl + encodeURIComponent(campaignUrl);
   
   inputElement.value = '';
-  processCompanyData();
+  processCampaignData();
 }
 
 // Map Initialization
@@ -279,7 +247,7 @@ class DataManager {
     this.originalKey = 'originalFilteredData'; // Base Jyväskylä locations
     this.modifiedKey = 'modifiedFilteredData'; // Base locations with status updates
     this.statusKey = 'locationStatus'; // A separate object just for statuses {id: {status, timestamp}}
-    this.companyModifiedKey = 'modifiedCompanyData'; // Company locations with status updates
+    this.campaignModifiedKey = 'modifiedCampaignData'; // Campaign locations with status updates
   }
 
   /**
@@ -297,12 +265,12 @@ class DataManager {
     }
     localStorage.setItem(this.statusKey, JSON.stringify(statusData));
 
-    // Update the status in the company data if it exists there
-    const companyData = JSON.parse(localStorage.getItem(this.companyModifiedKey) || '[]');
-    const companyIdx = companyData.findIndex(p => p.id === locationId);
-    if (companyIdx !== -1) {
-      companyData[companyIdx].status = status;
-      localStorage.setItem(this.companyModifiedKey, JSON.stringify(companyData));
+    // Update the status in the campaign data if it exists there
+    const campaignData = JSON.parse(localStorage.getItem(this.campaignModifiedKey) || '[]');
+    const campaignIdx = campaignData.findIndex(p => p.id === locationId);
+    if (campaignIdx !== -1) {
+      campaignData[campaignIdx].status = status;
+      localStorage.setItem(this.campaignModifiedKey, JSON.stringify(campaignData));
     }
 
     // Update the status in the base modified data
@@ -343,13 +311,13 @@ class DataManager {
   }
 
   /**
-   * Gets the currently active dataset for display (company data if loaded, otherwise base data).
+   * Gets the currently active dataset for display (campaign data if loaded, otherwise base data).
    * @returns {Array} An array of location objects to be displayed.
    */
   getCurrentData() {
-    const companyData = JSON.parse(localStorage.getItem(this.companyModifiedKey) || '[]');
-    if (companyData.length > 0) {
-      return companyData;
+    const campaignData = JSON.parse(localStorage.getItem(this.campaignModifiedKey) || '[]');
+    if (campaignData.length > 0) {
+      return campaignData;
     }
     return JSON.parse(localStorage.getItem(this.modifiedKey) || '[]');
   }
@@ -358,19 +326,22 @@ class DataManager {
 const dataManager = new DataManager();
 
 /**
- * Clears all company-specific data from the application and localStorage.
+ * Clears all campaign-specific data from the application and localStorage.
  * Re-renders the map to show only the base layer.
  */
-function clearCompanyData() {
-  if (!confirm('Are you sure you want to clear all company data?')) return;
-  localStorage.removeItem(dataManager.companyModifiedKey);
-  localStorage.removeItem(dataManager.statusKey);
-  allCompanyData.length = 0;
-  filteredCompanyData.length = 0;
+function clearCampaignData() {
+  if (!confirm('Are you sure you want to clear all campaign data?')) return;
+  // Remove campaign data from IndexedDB with campaignId
+  db.markersCampaigns.where('campaignId').equals(campaignId).delete().then(() => {
+    console.log(`Campaign data for ${campaignId} deleted from IndexedDB`);
+  }).catch(e => {
+    console.log(`Error: ${e}`);
+  });
+  allCampaignData.length = 0;
   
-  const companyInfoElement = document.getElementById('company-info');
-  if (companyInfoElement) {
-    companyInfoElement.style.display = 'none';
+  const campaignInfoElement = document.getElementById('campaign-info');
+  if (campaignInfoElement) {
+    campaignInfoElement.style.display = 'none';
   }
   
   renderMapMarkers();
@@ -542,14 +513,14 @@ function getGreyIconByType(advertisementType) {
 }
 
 /**
- * Creates a marker icon for company layers with custom color
- * This function can be used for different company types in the future
+ * Creates a marker icon for campaign layers with custom color
+ * This function can be used for different campaign types in the future
  * @param {string} advertisementType - The type of advertisement
- * @param {string} companyType - The type of company ('default', 'premium', 'partner', etc.)
- * @returns {L.DivIcon} The appropriate company marker icon
+ * @param {string} campaignType - The type of campaign ('default', 'premium', 'partner', etc.)
+ * @returns {L.DivIcon} The appropriate campaign marker icon
  */
-function getCompanyMarkerIcon(advertisementType, companyType = 'default') {
-  const companyColors = {
+function getCampaignMarkerIcon(advertisementType, campaignType = 'default') {
+  const campaignColors = {
     'default': MARKER_COLORS.RED,
     'premium': MARKER_COLORS.ORANGE,
     'partner': MARKER_COLORS.BLUE,
@@ -557,25 +528,25 @@ function getCompanyMarkerIcon(advertisementType, companyType = 'default') {
     'visited': MARKER_COLORS.GREEN
   };
 
-  const color = companyColors[companyType] || MARKER_COLORS.RED;
+  const color = campaignColors[campaignType] || MARKER_COLORS.RED;
   return getMarkerIcon(advertisementType, color);
 }
 
 /**
- * Helper function to determine company type based on company data
- * This can be extended in the future to support different company classifications
- * @param {Object} companyData - The company data object
- * @returns {string} The company type
+ * Helper function to determine campaign type based on campaign data
+ * This can be extended in the future to support different campaign classifications
+ * @param {Object} campaignData - The campaign data object
+ * @returns {string} The campaign type
  */
-function getCompanyType(companyData) {
-  // Future implementation could check company properties like:
-  // - companyData.tier (premium, standard, basic)
-  // - companyData.partnership_level
-  // - companyData.subscription_type
+function getCampaignType(campaignData) {
+  // Future implementation could check campaign properties like:
+  // - campaignData.tier (premium, standard, basic)
+  // - campaignData.partnership_level
+  // - campaignData.subscription_type
   // For now, return 'default' for all companies
 
   // Suppress unused parameter warning for future implementation
-  void companyData;
+  void campaignData;
   return 'default';
 }
 
@@ -614,25 +585,25 @@ function formatTimestamp(isoString) {
 /**
  * Creates the HTML content for a marker's popup.
  * @param {Object} placeData - The data object for the location.
- * @param {boolean} isCompany - Whether this is a company-specific location.
+ * @param {boolean} isCampaign - Whether this is a campaign-specific location.
  * @returns {string} The HTML string for the popup.
  */
-function createPopupContent(placeData, isCompany) {
+function createPopupContent(placeData, isCampaign) {
     const currentStatus = dataManager.getStatus(placeData.id);
     const isChecked = currentStatus ? 'checked' : '';
     const checkboxId = `status-${placeData.id}`;
 
-    let companyInfoHtml = '';
-    if (isCompany) {
+    let campaignInfoHtml = '';
+    if (isCampaign) {
         const timestamp = dataManager.getTimestamp(placeData.id);
         let visitedHtml = '';
         if (timestamp) {
             visitedHtml = `<div class="popup-info"><i class="fas fa-check-circle"></i>Visited on: ${formatTimestamp(timestamp)}</div>`;
         }
-        companyInfoHtml = `
+        campaignInfoHtml = `
             ${visitedHtml}
-            <div class="popup-info"><i class="fas fa-building"></i>Company: ${placeData.companyName}</div>
-            <div class="popup-info"><i class="fas fa-info-circle"></i>Description: ${placeData.companyDescription || 'N/A'}</div>
+            <div class="popup-info"><i class="fas fa-building"></i>Campaign: ${placeData.campaignName}</div>
+            <div class="popup-info"><i class="fas fa-info-circle"></i>Description: ${placeData.campaignDescription || 'N/A'}</div>
             <div class="popup-info"><i class="fas fa-calendar-alt"></i>Start Date: ${formatDate(placeData.startDate)}</div>
             <div class="popup-info"><i class="fas fa-calendar-alt"></i>End Date: ${formatDate(placeData.endDate)}</div>
         `;
@@ -641,7 +612,7 @@ function createPopupContent(placeData, isCompany) {
     return `
         <div class="popup-content">
             <h3>${placeData.name}</h3>
-            ${companyInfoHtml}
+            ${campaignInfoHtml}
             <div class="checkbox-container">
                 <label class="checkbox-label">
                     <input type="checkbox" id="${checkboxId}" ${isChecked} onchange="handleStatusChange(${placeData.id}, this)" class="checkbox-input"/>
@@ -657,20 +628,29 @@ function createPopupContent(placeData, isCompany) {
  * based on the current data and filter settings.
  */
 function renderMapMarkers() {
-    const allBaseLocations = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
-    const companyLocations = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
-    const showAllToggle = document.getElementById('grey-markers-toggle').checked;
     
-    const companyToggle = document.getElementById('company-markers-toggle');
-    const showCompanyMarkers = companyToggle ? companyToggle.checked : false;
+    // Fetch all markers from IndexedDB and store in an array
+    const allBaseLocations = [];
+    db.allMarkers.each(item => allBaseLocations.push(item)).then(() => {
+      console.log('All markers loaded from IndexedDB');
+    }).catch(e => {
+      console.log(`Error: ${e}`);
+    });
+
+    // const allBaseLocations = JSON.parse(localStorage.getItem(dataManager.originalKey) || '[]');
+    // const campaignLocations = JSON.parse(localStorage.getItem(dataManager.campaignModifiedKey) || '[]');
+    // const showAllToggle = document.getElementById('grey-markers-toggle').checked;
+    
+    // const campaignToggle = document.getElementById('campaign-markers-toggle');
+    // const showCampaignMarkers = campaignToggle ? campaignToggle.checked : false;
 
     if (allBaseLocations.length === 0) {
         alert('No data available. Please reload the page.');
         return;
       }
 
-    // Create a Map for quick lookup of company locations by ID
-    const companyDataMap = new Map(companyLocations.map(item => [item.id, item]));
+    // Create a Map for quick lookup of campaign locations by ID
+    // const campaignDataMap = new Map(campaignLocations.map(item => [item.id, item]));
 
     // Remove old layer and create a new one with the current cluster radius
     if (markersLayer) map.removeLayer(markersLayer);
@@ -683,9 +663,9 @@ function renderMapMarkers() {
 
     // Iterate through all base locations to decide how to render each one
     allBaseLocations.forEach(place => {
-        const status = dataManager.getStatus(place.id);
-        const isCompanyLocation = companyDataMap.has(place.id);
-        const placeData = isCompanyLocation ? companyDataMap.get(place.id) : place;
+        // const status = dataManager.getStatus(place.id);
+        // const isCampaignLocation = campaignDataMap.has(place.id);
+        // const placeData = isCampaignLocation ? campaignDataMap.get(place.id) : place;
 
         let icon = null;
         let popupContent = null;
@@ -694,26 +674,26 @@ function renderMapMarkers() {
         // Determine the advertisement type for consistent shape across all marker types
         const advertisementType = getAdvertisementType(place.name);
 
-        if (status) { // If visited, always show as green
-            if (isCompanyLocation) {
-                icon = getCompanyMarkerIcon(advertisementType, 'visited');
-            } else {
-                icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREEN);
-            }
-            isVisible = true;
-            popupContent = createPopupContent(placeData, isCompanyLocation);
-        } else { // If not visited
-            if (isCompanyLocation && showCompanyMarkers) { // Show as company marker if it's a company location and the filter is on
-                const companyType = getCompanyType(placeData);
-                icon = getCompanyMarkerIcon(advertisementType, companyType);
-                isVisible = true;
-                popupContent = createPopupContent(placeData, true);
-            } else if (showAllToggle) { // Show as grey if it's a base location and the filter is on
-                icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
-                isVisible = true;
-                popupContent = createPopupContent(placeData, false);
-            }
-        }
+        // if (status) { // If visited, always show as green
+        //     if (isCampaignLocation) {
+        //         icon = getCampaignMarkerIcon(advertisementType, 'visited');
+        //     } else {
+        //         icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREEN);
+        //     }
+        //     isVisible = true;
+        //     popupContent = createPopupContent(placeData, isCampaignLocation);
+        // } else { // If not visited
+        //     if (isCampaignLocation && showCampaignMarkers) { // Show as campaign marker if it's a campaign location and the filter is on
+        //         const campaignType = getCampaignType(placeData);
+        //         icon = getCampaignMarkerIcon(advertisementType, campaignType);
+        //         isVisible = true;
+        //         popupContent = createPopupContent(placeData, true);
+        //     } else if (showAllToggle) { // Show as grey if it's a base location and the filter is on
+        //         icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
+        //         isVisible = true;
+        //         popupContent = createPopupContent(placeData, false);
+        //     }
+        // }
 
         if (isVisible) {
             let marker = L.marker([place.lat, place.lng], { icon: icon });
@@ -725,7 +705,7 @@ function renderMapMarkers() {
     });
 
     map.addLayer(markersLayer);
-    updateStatistics();
+    // updateStatistics();
 }
 
 /**
@@ -738,27 +718,27 @@ function saveStateAndRender() {
 }
 
 /**
- * Displays the company information panel in the UI.
- * @param {string} companyName - The name of the company to display.
+ * Displays the campaign information panel in the UI.
+ * @param {string} campaignName - The name of the campaign to display.
  */
-function displayCompanyInfo(companyName) {
-  const companyInfoElement = document.getElementById('company-info');
-  if (companyInfoElement) {
+function displayCampaignInfo(campaignName) {
+  const campaignInfoElement = document.getElementById('campaign-info');
+  if (campaignInfoElement) {
     const savedFilters = prefsManager.loadFilterState();
-    companyInfoElement.innerHTML = `
-      <div class="company-info-content">
-        <input type="checkbox" id="company-markers-toggle" ${savedFilters.showCompany ? 'checked' : ''} class="checkbox-input-company" />
-        <div class="company-name">
-          <span>${companyName}</span>
+    campaignInfoElement.innerHTML = `
+      <div class="campaign-info-content">
+        <input type="checkbox" id="campaign-markers-toggle" ${savedFilters.showCampaign ? 'checked' : ''} class="checkbox-input-campaign" />
+        <div class="campaign-name">
+          <span>${campaignName}</span>
         </div>
-        <button id="clear-company-data" class="red-marker-indicator">Clear</button>
+        <button id="clear-campaign-data" class="red-marker-indicator">Clear</button>
       </div>
     `;
-    companyInfoElement.style.display = 'initial';
+    campaignInfoElement.style.display = 'initial';
     
     // Add event listeners to the newly created elements
-    document.getElementById('company-markers-toggle').addEventListener('change', saveStateAndRender);
-    document.getElementById('clear-company-data').addEventListener('click', clearCompanyData);
+    document.getElementById('campaign-markers-toggle').addEventListener('change', saveStateAndRender);
+    document.getElementById('clear-campaign-data').addEventListener('click', clearCampaignData);
   }
 }
 
@@ -796,12 +776,12 @@ function toggleMinimize() {
 }
 
 /**
- * Exports the user's progress (statuses and company data) to a JSON file.
+ * Exports the user's progress (statuses and campaign data) to a JSON file.
  */
 function exportData() {
     const dataToExport = {
         locationStatus: localStorage.getItem(dataManager.statusKey) || '{}',
-        modifiedCompanyData: localStorage.getItem(dataManager.companyModifiedKey) || '[]',
+        modifiedCampaignData: localStorage.getItem(dataManager.campaignModifiedKey) || '[]',
     };
 
     const today = new Date();
@@ -834,9 +814,9 @@ function importData(event) {
     reader.onload = function(e) {
         try {
             const importedData = JSON.parse(e.target.result);
-            if (importedData.locationStatus && importedData.modifiedCompanyData) {
+            if (importedData.locationStatus && importedData.modifiedCampaignData) {
                 localStorage.setItem(dataManager.statusKey, importedData.locationStatus);
-                localStorage.setItem(dataManager.companyModifiedKey, importedData.modifiedCompanyData);
+                localStorage.setItem(dataManager.campaignModifiedKey, importedData.modifiedCampaignData);
                 if (confirm('Data imported successfully! Reload the page to apply changes?')) {
                     location.reload();
                 }
@@ -928,13 +908,13 @@ function initializeApp() {
 
   // Check if base data already exists
   if (localStorage.getItem(dataManager.originalKey)) {
-    // If so, check for company data and display info if present
-    const companyData = JSON.parse(localStorage.getItem(dataManager.companyModifiedKey) || '[]');
-    if (companyData.length > 0 && companyData[0].companyName) {
-      displayCompanyInfo(companyData[0].companyName);
+    // If so, check for campaign data and display info if present
+    const campaignData = JSON.parse(localStorage.getItem(dataManager.campaignModifiedKey) || '[]');
+    if (campaignData.length > 0 && campaignData[0].campaignName) {
+      displayCampaignInfo(campaignData[0].campaignName);
     } else {
-       const companyInfoElement = document.getElementById('company-info');
-       if (companyInfoElement) companyInfoElement.style.display = 'none';
+       const campaignInfoElement = document.getElementById('campaign-info');
+       if (campaignInfoElement) campaignInfoElement.style.display = 'none';
     }
     
     // Render the map with existing data

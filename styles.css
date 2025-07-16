@@ -177,11 +177,11 @@ html, body {
   gap: 8px;
 }
 
-.checkbox-input, .checkbox-input-company {
+.checkbox-input, .checkbox-input-campaign {
   transform: scale(1.5);
 }
 
-.checkbox-input-company {
+.checkbox-input-campaign {
   accent-color: #dc3545;
 }
 
@@ -203,8 +203,8 @@ html, body {
   width: 16px;
 }
 
-/* Company input section */
-.company-input-section {
+/* Campaign input section */
+.campaign-input-section {
   margin-bottom: 15px;
 }
 
@@ -214,7 +214,7 @@ html, body {
   align-items: center;
 }
 
-.company-input {
+.campaign-input {
   padding: 6px 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
@@ -222,31 +222,31 @@ html, body {
   flex: 1;
 }
 
-.company-input:focus {
+.campaign-input:focus {
   outline: none;
   border-color: #007bff;
 }
 
-/* Company info section */
-.company-info {
+/* Campaign info section */
+.campaign-info {
   margin-bottom: 15px;
   padding: 8px;
   background-color: #f8f9fa;
   border-radius: 4px;
 }
 
-.company-info-content {
+.campaign-info-content {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 12px;
 }
 
-.company-info-content i {
+.campaign-info-content i {
   color: #dc3545;
 }
 
-.company-name {
+.campaign-name {
   display: flex;
   flex-direction: column;
 }
