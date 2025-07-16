@@ -629,30 +629,34 @@ function renderMapMarkers() {
         zoomToBoundsOnClick: true
     });
 
+    // Get the current state of the "All markers" toggle
+    const showGreyMarkers = document.getElementById('grey-markers-toggle').checked;
+
     // Fetch all base markers from IndexedDB
     db.allMarkers.toArray().then(allBaseLocations => {
         if (!allBaseLocations || allBaseLocations.length === 0) {
             alert('No base location data available. Please reload the page.');
             return;
         }
+        if (showGreyMarkers) {
+          allBaseLocations.forEach(place => {
+              // Only render grey markers for base locations
+              const advertisementType = getAdvertisementType(place.name);
+              const icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
 
-        allBaseLocations.forEach(place => {
-            // Only render grey markers for base locations
-            const advertisementType = getAdvertisementType(place.name);
-            const icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
+              // Minimal popup for base marker
+              const popupContent = `
+                  <div class="popup-content">
+                      <h3>${place.name}</h3>
+                  </div>
+              `;
 
-            // Minimal popup for base marker
-            const popupContent = `
-                <div class="popup-content">
-                    <h3>${place.name}</h3>
-                </div>
-            `;
-
-            const marker = L.marker([place.lat, place.lng], { icon });
-            marker.locationId = place.id;
-            marker.bindPopup(popupContent);
-            markersLayer.addLayer(marker);
-        });
+              const marker = L.marker([place.lat, place.lng], { icon });
+              marker.locationId = place.id;
+              marker.bindPopup(popupContent);
+              markersLayer.addLayer(marker);
+          });
+        }
 
         map.addLayer(markersLayer);
     }).catch(e => {
@@ -845,7 +849,7 @@ function locateUser() {
 
 /**
  * Initializes the application on page load. It restores filter states and
- * either fetches initial data or renders the map using data from localStorage.
+ * either fetches initial data or renders the map using data from IndexedDB.
  */
 function initializeApp() {
   const savedFilters = prefsManager.loadFilterState();
