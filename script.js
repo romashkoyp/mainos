@@ -1353,34 +1353,27 @@ async function clearAllCampaigns() {
  * Refreshes all marker data by clearing local storage and refetching from API
  */
 async function refreshAllData() {
-  if (!confirm('Are you sure you want to refresh all data? This will clear all local data and refetch from the server. This action cannot be undone.')) {
+  if (!confirm('Are you sure you want to refresh base marker data? This will clear all local data about base locations and refetch from the server.')) {
     return;
   }
 
   try {
-    // Clear all local data
+    // Clear table allMarkers from IndexedDB
     await db.allMarkers.clear();
-    // await dataManager.clearAllCampaignData();
-    // campaignManager.clearAllCampaigns();
 
     // Clear arrays
-    // allData.length = 0;
-    // filteredData.length = 0;
-    allCampaignData.length = 0;
-    filteredCampaignData.length = 0;
+    allData.length = 0;
+    filteredData.length = 0;
 
     // Reset page counter
     page = 1;
     url = corsProxyUrl + encodeURIComponent(originalUrl);
 
-    // Update UI
-    // updateCampaignUI();
-
     // Refetch data from API
     await renderData();
     updateStatistics();
 
-    console.log('All data refreshed successfully');
+    console.log('Base marker locations refreshed successfully');
   } catch (error) {
     console.error('Error refreshing data:', error);
     alert('Error refreshing data. Please try again.');
@@ -1616,7 +1609,11 @@ async function exportData() {
 
     const link = document.createElement('a');
     link.href = url;
-    link.download = `mainos-data-${new Date().toISOString().split('T')[0]}.json`;
+    // link.download = `mainos-data-${new Date().toISOString().split('T')[0]}.json`;
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, '-');
+    link.download = `mainos-data-${dateStr}_time_${timeStr}.json`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
