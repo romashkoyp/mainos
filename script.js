@@ -683,7 +683,7 @@ map.on('moveend zoomend', () => {
 
 // Adds the OpenStreetMap tile layer to the map.
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors <img src="https://visitor-badge.laobi.icu/badge?page_id=page.id" alt="visitor badge"/>'
 }).addTo(map);
 
 
