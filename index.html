@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mainos Jyväskylä</title>
+    <title>Mainos</title>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -13,7 +13,11 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="styles.css" />
+
+    <!-- https://dexie.org/docs/Tutorial/Hello-World -->
     <script src="https://unpkg.com/dexie/dist/dexie.js"></script>
+    
+    <!-- https://counter.dev/dashboard.html -->
     <script src="https://cdn.counter.dev/script.js" data-id="7eb64be9-4464-4de5-ba46-f3245c72bc8c" data-utcoffset="3"></script>
 </head>
 <body>
@@ -105,7 +109,7 @@
         </div>
         <div class="campaign-input-section">
           <div class="input-group">
-            <input type="text" id="campaign-id-input" class="campaign-input" placeholder="Campaign ID" value="af79ad25-1bc0-4451-a8bc-600d12b36a68">
+            <input type="text" id="campaign-id-input" class="campaign-input" placeholder="Campaign ID">
             <button onclick="loadCampaignData(event)" class="btn btn-warning">Load</button>
           </div>
         </div>
