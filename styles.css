@@ -313,6 +313,7 @@ html, body {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 2px;
+  max-width: 250px;
 }
 
 .campaign-id {
