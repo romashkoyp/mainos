@@ -1700,4 +1700,18 @@ async function importData(event) {
 }
 
 // Initialize the application when the page loads
-document.addEventListener('DOMContentLoaded', initializeApp);
+document.addEventListener('DOMContentLoaded', () => {
+  initializeApp();
+
+  // Prevent map scroll when scrolling inside tracker-content
+  const tracker = document.getElementById('tracker-content');
+  if (tracker) {
+    tracker.addEventListener('touchmove', function(e) {
+      e.stopPropagation();
+    }, { passive: false });
+
+    tracker.addEventListener('wheel', function(e) {
+      e.stopPropagation();
+    }, { passive: false });
+  }
+});

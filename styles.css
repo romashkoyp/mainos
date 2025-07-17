@@ -256,7 +256,7 @@ html, body {
   padding: 8px;
   background-color: #f8f9fa;
   border-radius: 4px;
-  max-height: 250px;
+  max-height: 165px;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
   scrollbar-width: thin; /* Firefox */
@@ -285,7 +285,7 @@ html, body {
 .campaigns-container {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .campaign-item {
@@ -551,7 +551,10 @@ html, body {
 }
 
 #tracker-content {
-  transition: all 0.3s ease;
+  overflow-y: auto;
+  max-height: 80vh;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* This is the existing class to hide the content */
@@ -614,8 +617,12 @@ html, body {
     margin: 0 auto; /* Center the panel */
     max-width: 400px; /* Stop it from getting too wide on tablets */
 
-    max-height: 85vh; /* Ensure it's never taller than 85% of the screen */
+    max-height: 100vh; /* Ensure it's never taller than 85% of the screen */
     overflow-y: auto; /* Make the panel itself scrollable if content overflows */
+  }
+
+  .campaigns-container {
+    max-height: 150px;
   }
 
   /* When minimized on mobile, remove scrolling and ensure it's small */
@@ -627,10 +634,6 @@ html, body {
   /* Campaign list mobile improvements */
   .campaign-info {
     max-height: 200px; /* Smaller height on mobile */
-  }
-
-  .legend-items {
-    grid-template-columns: 1fr; /* Single column on mobile */
   }
 
   .stats-row-compact {
