@@ -139,6 +139,139 @@ class MarkerDataManager {
     }
 }
 
+
+/**
+ * Utility functions for parsing Odoo HTML responses
+ */
+class OdooHtmlParser {
+    /**
+     * Fetches HTML from a URL using CORS proxy
+     * @param {string} url - The Odoo URL to fetch
+     * @returns {Promise<string>} The HTML content
+     */
+    static async fetchHtml(url) {
+        const corsProxyUrl = 'https://corsproxy.io/?';
+        const proxiedUrl = corsProxyUrl + encodeURIComponent(url);
+        const response = await fetch(proxiedUrl);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch: ${response.status}`);
+        }
+        return await response.text();
+    }
+
+    /**
+     * Extracts JSON data from a script tag by ID
+     * @param {string} html - The HTML content
+     * @param {string} scriptId - The ID of the script tag
+     * @returns {Array} Parsed JSON array
+     */
+    static extractJsonFromScript(html, scriptId) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const scriptElement = doc.getElementById(scriptId);
+        
+        if (!scriptElement) {
+            console.warn(`Script tag with id "${scriptId}" not found`);
+            return [];
+        }
+        
+        try {
+            const jsonText = scriptElement.textContent || '[]';
+            const data = JSON.parse(jsonText);
+            return this.decodeUnicodeInData(data);
+        } catch (error) {
+            console.error(`Error parsing JSON from script tag "${scriptId}":`, error);
+            return [];
+        }
+    }
+
+    /**
+     * Decodes Unicode escape sequences in marker data
+     * @param {Array} data - Array of marker objects
+     * @returns {Array} Data with decoded Unicode strings
+     */
+    static decodeUnicodeInData(data) {
+        return data.map(item => {
+            const decoded = { ...item };
+            if (decoded.name && typeof decoded.name === 'string') {
+                decoded.name = this.decodeUnicode(decoded.name);
+            }
+            return decoded;
+        });
+    }
+
+    /**
+     * Decodes Unicode escape sequences in a string
+     * @param {string} str - String with Unicode escapes (e.g., "Jyv\u00e4skyl\u00e4")
+     * @returns {string} Decoded string (e.g., "Jyväskylä")
+     */
+    static decodeUnicode(str) {
+        return str.replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
+            return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+        });
+    }
+
+    /**
+     * Extracts campaign ID from Odoo URL
+     * @param {string} url - The Odoo URL
+     * @returns {string|null} The campaign ID or null
+     */
+    static extractCampaignIdFromUrl(url) {
+        const match = url.match(/access_token=([a-f0-9-]+)/);
+        return match ? match[1] : null;
+    }
+
+    /**
+     * Extracts order number from Odoo URL
+     * @param {string} url - The Odoo URL
+     * @returns {string|null} The order number or null
+     */
+    static extractOrderFromUrl(url) {
+        const match = url.match(/\/orders\/(\d+)\//);
+        return match ? match[1] : null;
+    }
+
+    /**
+     * Extracts campaign name from HTML
+     * @param {string} html - The HTML content
+     * @returns {string} The campaign name
+     */
+    static extractCampaignName(html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const h3Element = doc.querySelector('h3');
+        return h3Element ? h3Element.textContent.trim() : 'Unknown Campaign';
+    }
+
+        /**
+     * Extracts campaign dates from HTML for a specific marker
+     * @param {string} html - The HTML content
+     * @param {number} markerId - The marker ID
+     * @returns {Object} Object with startDate and endDate
+     */
+    static extractCampaignDates(html, markerId) {
+        const rowRegex = new RegExp(`<tr class="pole-table-row"[^>]*data-line-id="${markerId}"[^>]*>([\\s\\S]*?)<\\/tr>`);
+        const rowMatch = html.match(rowRegex);
+        
+        if (!rowMatch) {
+            return { startDate: null, endDate: null };
+        }
+        
+        const rowContent = rowMatch[1];
+        const spanRegex = /<span>(.*?)<\/span>/g;
+        const spans = [];
+        let spanMatch;
+        
+        while ((spanMatch = spanRegex.exec(rowContent)) !== null) {
+            spans.push(spanMatch[1].trim());
+        }
+        
+        return {
+            startDate: spans[0] || null,
+            endDate: spans[1] || null
+        };
+    }
+}
 const dataManager = new MarkerDataManager();
 
 /**
@@ -541,98 +674,139 @@ async function testQueries() {
 }
 
 /**
- * Fetches location data for a specific campaign from the API.
- * @returns {Promise<Object>} A promise that resolves to the JSON data from the API.
+ * Fetches campaign data from Odoo HTML response
+ * @param {string} odooUrl - The full Odoo URL
+ * @returns {Promise<Object>} Object containing HTML and extracted data
  */
-const fetchCampaignData = async () => {
-  const response = await fetch(urlCampaign);
-  // console.log(response);
-  if (!response.ok) {
-    alert(`Failed to get campaign data. Status: ${response.status}`);
-    return;
+const fetchCampaignData = async (odooUrl) => {
+  try {
+    const html = await OdooHtmlParser.fetchHtml(odooUrl);
+    return {
+      html,
+      poleData: OdooHtmlParser.extractJsonFromScript(html, 'pole-data'),
+      allPolesData: OdooHtmlParser.extractJsonFromScript(html, 'all-poles-data'),
+      campaignName: OdooHtmlParser.extractCampaignName(html),
+      campaignId: OdooHtmlParser.extractCampaignIdFromUrl(odooUrl),
+      campaignOrder: OdooHtmlParser.extractOrderFromUrl(odooUrl)
+    };
+  } catch (error) {
+    console.error('Error fetching campaign data:', error);
+    throw error;
   }
-  return response.json();
 };
 
 /**
- * Initiates the fetching and processing of campaign-specific data.
+ * Initiates the fetching and processing of campaign-specific data from Odoo HTML.
+ * @param {string} odooUrl - The full Odoo URL
  */
-async function processCampaignData() {
-  const data = await fetchCampaignData();
-  if (!data) return;
+async function processCampaignData(odooUrl) {
+  const data = await fetchCampaignData(odooUrl);
+  if (!data || !data.poleData || data.poleData.length === 0) {
+    alert('No campaign data found in the provided URL');
+    return;
+  }
 
-  allCampaignData.length = 0;
-  allCampaignData.push(data);
-  const campaignApiData = allCampaignData[0];
+  const { html, poleData, allPolesData, campaignName, campaignId, campaignOrder } = data;
 
-  if (campaignApiData && campaignApiData.reserved_resources) {
-    try {
-      // Clear existing data for this campaign to avoid duplicates
-      await dataManager.clearCampaignData(campaignApiData.id);
+  try {
+    // Clear existing data for this campaign to avoid duplicates
+    await dataManager.clearCampaignData(campaignId);
 
-      // Process and add new campaign data
-      const campaignMarkers = [];
-      campaignApiData.reserved_resources.forEach(resource => {
-        if (resource.inventory_resource && resource.inventory_resource.map_point_markers) {
-          resource.inventory_resource.map_point_markers.forEach(marker => {
-            campaignMarkers.push({
-              campaignId: campaignApiData.id,
-              markerId: marker.id,
-              markerName: marker.name,
-              markerLat: marker.lat,
-              markerLng: marker.lng,
-              campaignStartDate: resource.start_date,
-              campaignEndDate: resource.end_date,
-              campaignName: campaignApiData.name,
-              campaignDescription: campaignApiData.description,
-              markerVisited: false,
-              markerDateVisited: null
-            });
-          });
-        }
+    // Process and add new campaign data
+    const campaignMarkers = [];
+    
+    poleData.forEach(marker => {
+      // Extract dates for this specific marker using pole_line_no as the identifier
+      const dates = OdooHtmlParser.extractCampaignDates(html, marker.id);
+      
+      campaignMarkers.push({
+        campaignId: campaignId,
+        campaignOrder: campaignOrder,
+        markerId: marker.id,
+        markerName: marker.name,
+        markerLat: marker.lat,
+        markerLng: marker.lng,
+        campaignStartDate: dates.startDate,
+        campaignEndDate: dates.endDate,
+        campaignName: campaignName,
+        campaignDescription: '',
+        markerVisited: false,
+        markerDateVisited: null
       });
+    });
 
-      // Bulk add all campaign markers
-      if (campaignMarkers.length > 0) {
-        await db.markersCampaigns.bulkAdd(campaignMarkers);
-        console.log(`Campaign data for ${campaignApiData.id} added to IndexedDB (${campaignMarkers.length} markers)`);
-
-        // Add campaign to campaign manager
-        campaignManager.addCampaign(
-          campaignApiData.id,
-          campaignApiData.name,
-          campaignApiData.description
-        );
-
-        // Update campaign UI and re-render markers
-        updateCampaignUI();
-        renderMapMarkers();
+    // Process base markers from all-poles-data if available
+    if (allPolesData && allPolesData.length > 0) {
+      const existingMarkerCount = await db.allMarkers.count();
+      
+      // Only add base markers if they don't exist yet
+      if (existingMarkerCount === 0) {
+        const baseMarkers = allPolesData.map(marker => ({
+          id: marker.id,
+          name: marker.name,
+          lat: marker.lat,
+          lng: marker.lng
+        }));
+        
+        await db.allMarkers.bulkAdd(baseMarkers);
+        console.log(`Base markers added to IndexedDB (${baseMarkers.length} markers)`);
       }
-    } catch (error) {
-      console.error('Error processing campaign data:', error);
     }
+
+    // Bulk add all campaign markers
+    if (campaignMarkers.length > 0) {
+      await db.markersCampaigns.bulkAdd(campaignMarkers);
+      console.log(`Campaign data for ${campaignId} added to IndexedDB (${campaignMarkers.length} markers)`);
+
+      // Add campaign to campaign manager
+      campaignManager.addCampaign(
+        campaignId,
+        campaignName,
+        ''
+      );
+
+      // Update campaign UI and re-render markers
+      updateCampaignUI();
+      renderMapMarkers();
+    }
+  } catch (error) {
+    console.error('Error processing campaign data:', error);
+    throw error;
   }
 }
 
 /**
- * Handles the "Load" button click. It reads the campaign ID from the input,
- * updates the API URL, and initiates the fetch process.
+ * Handles the "Load" button click. It reads the Odoo URL from the input,
+ * validates it, and initiates the fetch process.
  */
 async function loadCampaignData(event) {
   const inputElement = document.getElementById('campaign-id-input');
-  const inputCampaignId = inputElement.value.trim();
+  const inputUrl = inputElement.value.trim();
 
-  if (!inputCampaignId) {
-    alert('Please enter a Campaign ID');
+  if (!inputUrl) {
+    alert('Please enter an Odoo campaign URL');
+    return;
+  }
+
+  // Validate URL format
+  if (!inputUrl.includes('kengurumedia.odoo.com') || !inputUrl.includes('/orders/') || !inputUrl.includes('access_token=')) {
+    alert('Invalid Odoo URL format. Please paste the full campaign URL from Odoo.\n\nExample:\nhttps://kengurumedia.odoo.com/fi/my/orders/4380/poles-map?access_token=...');
+    return;
+  }
+
+  // Extract campaign ID from URL
+  const extractedCampaignId = OdooHtmlParser.extractCampaignIdFromUrl(inputUrl);
+  if (!extractedCampaignId) {
+    alert('Could not extract campaign ID from URL. Please check the URL format.');
     return;
   }
 
   // Check if campaign already exists in IndexedDB
-  const existingMarkers = await dataManager.getCampaignMarkers(inputCampaignId);
+  const existingMarkers = await dataManager.getCampaignMarkers(extractedCampaignId);
   if (existingMarkers.length > 0) {
-    const campaignName = existingMarkers[0].campaignName || inputCampaignId.substring(0, 8);
+    const campaignName = existingMarkers[0].campaignName || 'Campaign';
     const confirmed = confirm(
-      `Campaign "${campaignName}" (ID: ${inputCampaignId.substring(0, 8)}) already exists in the database.\n` +
+      `Campaign "${campaignName}" already exists in the database.\n` +
       'Do you want to overwrite the existing data for this campaign?'
     );
     if (!confirmed) {
@@ -647,21 +821,17 @@ async function loadCampaignData(event) {
   loadButton.disabled = true;
 
   try {
-    campaignId = inputCampaignId;
-    campaignUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + campaignId + '/?format=json';
-    urlCampaign = corsProxyUrl + encodeURIComponent(campaignUrl);
-
     inputElement.value = '';
 
     // Wait for campaign data to fully load
-    await processCampaignData();
+    await processCampaignData(inputUrl);
 
     // Ensure statistics are updated after data loads
     await updateStatistics();
 
   } catch (error) {
     console.error('Error loading campaign data:', error);
-    alert('Error loading campaign data. Please try again.');
+    alert('Error loading campaign data. Please check the URL and try again.\n\nError: ' + error.message);
   } finally {
     // Restore button state
     loadButton.innerHTML = originalText;
@@ -1423,11 +1593,7 @@ function initializeLegendMarkers() {
  * @returns {string} The formatted date.
  */
 function formatDate(dateString) {
-  const date = new Date(dateString);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${day}-${month}-${year}`;
+  return dateString ? dateString : 'N/A';
 }
 
 /**
@@ -1533,7 +1699,7 @@ function locateUser() {
 
 /**
  * Initializes the application on page load. It restores filter states and
- * either fetches initial data or renders the map using data from IndexedDB.
+ * loads existing data from IndexedDB if available.
  */
 async function initializeApp() {
   const savedFilters = prefsManager.loadFilterState();
@@ -1577,13 +1743,18 @@ async function initializeApp() {
       renderMapMarkers();
       updateStatistics();
     } else {
-      // If no data exists, fetch it from the API
-      await renderData();
+      // No data exists - show empty map and guide user to load campaign
+      console.log('No data in IndexedDB. Please load a campaign using the URL input.');
+      const campaignInfoElement = document.getElementById('campaign-info');
+      if (campaignInfoElement) campaignInfoElement.style.display = 'none';
+      
+      // Initialize empty map
+      renderMapMarkers();
     }
   } catch (error) {
     console.error('Error initializing app:', error);
-    // Fallback to fetching data
-    await renderData();
+    // Show empty map on error
+    renderMapMarkers();
   }
 }
 
