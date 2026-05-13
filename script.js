@@ -574,7 +574,7 @@ class UserPreferencesManager {
         const greyToggle = document.getElementById('grey-markers-toggle');
         const clusteringToggle = document.getElementById('clustering-toggle');
         const filterState = {
-            showAll: greyToggle ? greyToggle.checked : true,
+            showAll: greyToggle ? greyToggle.checked : false,
             clusteringEnabled: clusteringToggle ? clusteringToggle.checked : true,
             clusterRadius: clusterRadius, // Save current cluster radius value
         };
@@ -588,7 +588,7 @@ class UserPreferencesManager {
     loadFilterState() {
         const savedState = localStorage.getItem(this.filtersKey);
         return savedState ? JSON.parse(savedState) : {
-            showAll: true,
+            showAll: false,
             clusteringEnabled: true,
             clusterRadius: 70
         };
@@ -1513,37 +1513,6 @@ async function clearAllCampaigns() {
   } catch (error) {
     console.error('Error clearing all campaigns:', error);
     alert('Error clearing campaign data. Please try again.');
-  }
-}
-
-/**
- * Refreshes all marker data by clearing local storage and refetching from API
- */
-async function refreshAllData() {
-  if (!confirm('Are you sure you want to refresh base marker data? This will clear all local data about base locations and refetch from the server.')) {
-    return;
-  }
-
-  try {
-    // Clear table allMarkers from IndexedDB
-    await db.allMarkers.clear();
-
-    // Clear arrays
-    allData.length = 0;
-    filteredData.length = 0;
-
-    // Reset page counter
-    page = 1;
-    url = corsProxyUrl + encodeURIComponent(originalUrl);
-
-    // Refetch data from API
-    await renderData();
-    updateStatistics();
-
-    console.log('Base marker locations refreshed successfully');
-  } catch (error) {
-    console.error('Error refreshing data:', error);
-    alert('Error refreshing data. Please try again.');
   }
 }
 

@@ -43,7 +43,6 @@ A map-based tool to track visited locations and campaign-specific locations in J
 
 7. **Campaign Management**  
    - Use the **Clear** button next to a campaign to remove it.
-   - Use the **Reset** button to refresh base marker data from the server.
 
 8. **Save & Restore Progress**  
    - Click **Export** to save your progress to a file.
