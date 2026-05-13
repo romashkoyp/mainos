@@ -22,7 +22,7 @@ const filteredCampaignData = []; // Stores campaign locations that match the bas
 const db = new Dexie('MainosDB');
 db.version(1).stores({
   allMarkers: 'id, name, lat, lng',
-  markersCampaigns: '[campaignId+markerId], campaignName, campaignDescription, campaignStartDate, campaignEndDate, markerName, markerLat, markerLng, markerVisited, markerDateVisited'
+  markersCampaigns: '[campaignId+markerId], campaignName, campaignStartDate, campaignEndDate, markerName, markerLat, markerLng, markerVisited, markerDateVisited'
 });
 
 /**
@@ -279,7 +279,7 @@ const dataManager = new MarkerDataManager();
  */
 class CampaignManager {
     constructor() {
-        this.campaigns = new Map(); // campaignId -> {name, color, visible, description}
+        this.campaigns = new Map(); // campaignId -> {name, color, visible}
         this.colorIndex = 0;
         this.loadCampaignSettings();
     }
@@ -288,9 +288,8 @@ class CampaignManager {
      * Adds a new campaign or updates an existing one
      * @param {string} campaignId - The campaign ID
      * @param {string} campaignName - The campaign name
-     * @param {string} campaignDescription - The campaign description
      */
-    addCampaign(campaignId, campaignName, campaignDescription = '') {
+    addCampaign(campaignId, campaignName) {
         if (!this.campaigns.has(campaignId)) {
             // Assign a new color for new campaigns
             const color = CAMPAIGN_COLORS[this.colorIndex % CAMPAIGN_COLORS.length];
@@ -298,7 +297,6 @@ class CampaignManager {
 
             this.campaigns.set(campaignId, {
                 name: campaignName,
-                description: campaignDescription,
                 color: color,
                 visible: true
             });
@@ -306,7 +304,6 @@ class CampaignManager {
             // Update existing campaign info
             const campaign = this.campaigns.get(campaignId);
             campaign.name = campaignName;
-            campaign.description = campaignDescription;
         }
         this.saveCampaignSettings();
     }
@@ -438,7 +435,7 @@ class CityFilterManager {
         allMarkers.forEach(item => {
             if (typeof item.name === 'string') {
                 const parts = item.name.split(' ');
-                if (parts.length > 1) {
+                if (parts.length > 1 && parts[0].toLowerCase() !== 'planned') {
                     uniqueLocations.add(parts[1].toLowerCase());
                 }
             }
@@ -729,7 +726,6 @@ async function processCampaignData(odooUrl) {
         campaignStartDate: dates.startDate,
         campaignEndDate: dates.endDate,
         campaignName: campaignName,
-        campaignDescription: '',
         markerVisited: false,
         markerDateVisited: null
       });
@@ -761,8 +757,7 @@ async function processCampaignData(odooUrl) {
       // Add campaign to campaign manager
       campaignManager.addCampaign(
         campaignId,
-        campaignName,
-        ''
+        campaignName
       );
 
       // Update campaign UI and re-render markers
@@ -1192,7 +1187,6 @@ function createPopupContent(placeData, isCampaign) {
         campaignInfoHtml = `
             ${visitedHtml}
             <div class="popup-info"><i class="fas fa-building"></i>Campaign: ${placeData.campaignName}</div>
-            <div class="popup-info"><i class="fas fa-info-circle"></i>Description: ${placeData.campaignDescription || 'N/A'}</div>
             <div class="popup-info"><i class="fas fa-calendar-alt"></i>Start Date: ${formatDate(placeData.campaignStartDate)}</div>
             <div class="popup-info"><i class="fas fa-calendar-alt"></i>End Date: ${formatDate(placeData.campaignEndDate)}</div>
         `;
@@ -1726,8 +1720,7 @@ async function initializeApp() {
             const firstMarker = campaignMarkers[0];
             campaignManager.addCampaign(
               campaignId,
-              firstMarker.campaignName,
-              firstMarker.campaignDescription
+              firstMarker.campaignName
             );
           }
         }
@@ -1846,8 +1839,7 @@ async function importData(event) {
           const firstMarker = campaignMarkers[0];
           campaignManager.addCampaign(
             campaignId,
-            firstMarker.campaignName,
-            firstMarker.campaignDescription
+            firstMarker.campaignName
           );
         }
       }
