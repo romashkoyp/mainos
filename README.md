@@ -21,8 +21,9 @@ A map-based tool to track visited locations and campaign-specific locations in J
    The map displays all base locations as grey markers.
 
 2. **Load Campaign Data**  
-   - Enter a Campaign ID (e.g., `af79ad25-1bc0-4451-a8bc-600d12b36a68`) and click **Load**.
-   - Campaign locations appear in a unique color (default: red if only one campaign).
+   - Paste the full Odoo campaign URL (e.g., `https://kengurumedia.odoo.com/...`) and click **Load**.
+   - The tool automatically fetches and parses the campaign locations.
+   - Campaign locations appear in a unique color.
    - You can load multiple campaigns; each will have its own color and toggle.
 
 3. **Track Your Progress**  
@@ -61,4 +62,4 @@ A map-based tool to track visited locations and campaign-specific locations in J
 
 - All data is stored in your browser (IndexedDB and localStorage).
 - You can load multiple campaigns at once and control their visibility.
-- Clearing or importing data will remove all progress and
+- Clearing or importing data will remove all progress
