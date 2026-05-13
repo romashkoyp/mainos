@@ -1,23 +1,3 @@
-// API Configuration
-const address = 'https://atlasmedia.mediani.fi/api/v1/public-map-point-markers/';
-const format = '/?format=json&page=';
-const id = '100';
-let page = 1;
-const originalUrl = address + id + format + page;
-const corsProxyUrl = 'https://corsproxy.io/?';
-let url = corsProxyUrl + encodeURIComponent(originalUrl);
-
-// let campaignId = 'af79ad25-1bc0-4451-a8bc-600d12b36a68';
-let campaignId = null;
-let campaignUrl = 'https://atlasmedia.mediani.fi/api/v1/reservation-resources-map/' + campaignId + '/?format=json'
-let urlCampaign = corsProxyUrl + encodeURIComponent(campaignUrl);
-
-// Data storage arrays
-const allData = []; // Stores all raw data fetched from the base API
-const filteredData = []; // Stores data filtered for a specific city (e.g., 'Jyväskylä')
-const allCampaignData = []; // Stores raw data fetched from the campaign-specific API
-const filteredCampaignData = []; // Stores campaign locations that match the base locations
-
 // Initialize IndexedDB database and tables
 const db = new Dexie('MainosDB');
 db.version(1).stores({
@@ -595,80 +575,6 @@ class UserPreferencesManager {
     }
 }
 const prefsManager = new UserPreferencesManager();
-
-
-/**
- * Fetches a single page of location data from the base API.
- * @returns {Promise<Object>} A promise that resolves to the JSON data from the API.
- */
-const fetchData = async () => {
-  return fetch(url).then(response => response.json());
-};
-
-/**
- * Fetches and processes all pages of data from the base API recursively.
- * Once all data is fetched, it triggers the filtering process.
- */
-async function renderData() {
-  const data = await fetchData();
-  allData.push(...data.results);
-  if (data.next) {
-    page++;
-    const newUrl = address + id + format + page;
-    url = corsProxyUrl + encodeURIComponent(newUrl);
-    await renderData();
-  } else {
-    // Store allData in IndexedDB
-    db.allMarkers.bulkAdd(allData.map(item => ({
-      id: item.id,
-      name: item.name,
-      lat: item.lat,
-      lng: item.lng
-    }))).then(() => {
-      console.log('All data added to IndexedDB');
-    }).catch(e => {
-      console.log(`Error: ${e}`);
-    });
-    await initializeCityFilter();
-    renderMapMarkers();
-  }
-}
-
-// Function to test some queries from IndexedDB data
-async function testQueries() {
-  try {
-    // Test 1: Find special type of advertisement
-    const allData = await db.allMarkers.toArray();
-    const placesByTypeOfAdvertisement = [];
-
-    allData.forEach(item => {
-      if (typeof item.name === 'string' && item.name.toLowerCase().includes(' maxi')) {
-        placesByTypeOfAdvertisement.push(item.name);
-      }
-    });
-    console.log('Places: ', placesByTypeOfAdvertisement);
-
-    // Test 2: Find all possible locations from the name field
-    if (allData.length === 0) return;
-
-    const uniqueLocations = new Set();
-    allData.forEach(item => {
-      if (typeof item.name === 'string') {
-        const parts = item.name.split(' ');
-        if (parts.length > 1) {
-          uniqueLocations.add(parts[1].toLowerCase());
-        }
-      }
-    });
-
-    const locations = Array.from(uniqueLocations)
-      .filter(Boolean)
-      .map(str => str.charAt(0).toUpperCase() + str.slice(1));
-    console.log('Locations:', locations);
-  } catch (error) {
-    console.error('Error running test queries:', error);
-  }
-}
 
 /**
  * Fetches campaign data from Odoo HTML response
@@ -1788,16 +1694,9 @@ async function importData(event) {
     await db.markersCampaigns.clear();
     campaignManager.clearAllCampaigns();
 
-    // Clear in-memory arrays
-    allData.length = 0;
-    filteredData.length = 0;
-    allCampaignData.length = 0;
-    filteredCampaignData.length = 0;
-
     // Import new data
     if (importData.allMarkers && importData.allMarkers.length > 0) {
       await db.allMarkers.bulkAdd(importData.allMarkers);
-      allData.push(...importData.allMarkers);
     }
 
     if (importData.campaignMarkers && importData.campaignMarkers.length > 0) {
