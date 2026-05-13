@@ -821,6 +821,9 @@ async function loadCampaignData(event) {
     // Wait for campaign data to fully load
     await processCampaignData(inputUrl);
 
+    // UPDATE THE CITY DROPDOWN LIST WITH NEW LOCATIONS
+    await initializeCityFilter();
+
     // Ensure statistics are updated after data loads
     await updateStatistics();
 
