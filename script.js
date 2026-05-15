@@ -1569,11 +1569,27 @@ function locateUser() {
     navigator.geolocation.getCurrentPosition(success, error);
 }
 
+// For testing purposes: Fetch data from Google Sheets API and log it to the console
+function getGoogleSheetData() {
+    const apiUrl = 'https://script.google.com/macros/s/AKfycbwsbrF8r7gW0Pt44YD8dmLqzg0Dsu_y2584ORxoATu7c9lm7w03fq8vk14hwNcbtXOw/exec';
+
+    fetch(apiUrl)
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(data => {
+        console.log(data);
+      })
+      .catch(error => console.error('Error fetching data:', error));
+}
+
 /**
  * Initializes the application on page load. It restores filter states and
  * loads existing data from IndexedDB if available.
  */
 async function initializeApp() {
+  getGoogleSheetData();
   const savedFilters = prefsManager.loadFilterState();
   document.getElementById('grey-markers-toggle').checked = savedFilters.showAll;
 
