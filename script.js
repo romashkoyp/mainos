@@ -1907,7 +1907,7 @@ function generateWorkReport(event) {
     // Format the description
     let description = `Starting KM: ${startingKm}\n`;
     description += `Ending KM: ${endingKm}\n`;
-    description += `Total Distance: ${(parseFloat(endingKm) - parseFloat(startingKm)).toFixed(1)} km\n\n`;
+    description += `Total Distance: ${(parseInt(endingKm) - parseInt(startingKm))} km\n\n`;
     
     if (selectedCampaigns.length > 0) {
       description += `Campaigns:\n`;

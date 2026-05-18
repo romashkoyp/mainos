@@ -843,6 +843,11 @@ html, body {
   gap: 8px;
 }
 
+.report-form-grid--km {
+  grid-template-columns: repeat(2, 1fr);
+  width: 50%;
+}
+
 .report-form-grid .report-form-field {
   flex-direction: column;
 }
@@ -898,8 +903,13 @@ html, body {
   }
 
   .report-form-row {
-    flex-direction: column;
+    flex-direction: row;
     gap: 10px;
+    width: 100%;
+  }
+
+  .report-form-grid--km {
+    width: 100%;
   }
 
   .report-form-grid {
