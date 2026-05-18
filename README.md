@@ -1,11 +1,11 @@
 # Location Tracker
 
-A map-based tool to track visited locations and campaign-specific locations in Jyväskylä.
+A map-based tool to track visited locations and campaign-specific locations across Finnish cities.
 
 ## Features
 
 - **Base Locations**: All available locations are shown as **grey markers**.
-- **Campaigns**: Load one or more campaigns by ID. Each campaign gets a unique color for its markers.
+- **Campaigns**: Load one or more campaigns by pasting an Odoo URL. Each campaign gets a unique color for its markers.
 - **Visited Tracking**: Mark any campaign location as "Visited" (turns green). Progress is saved automatically.
 - **City Filter**: Filter markers by city using the dropdown.
 - **Clustering**: Toggle clustering of markers on/off for easier viewing.
@@ -13,6 +13,7 @@ A map-based tool to track visited locations and campaign-specific locations in J
 - **Import/Export**: Export your progress to a file or import it later to restore.
 - **Campaign Management**: Show/hide individual campaigns, clear a specific campaign, or clear all campaigns.
 - **Find My Location**: Center the map on your current location.
+- **Work Report**: Generate and download a daily work report as an `.ics` calendar event.
 - **Persistent State**: Map view, filters, and campaign visibility are saved in your browser.
 
 ## How to Use
@@ -52,14 +53,28 @@ A map-based tool to track visited locations and campaign-specific locations in J
 9. **Find My Location**  
    - Click **Find Me** to center the map on your current location.
 
+10. **Work Report**  
+    - Click **Report** to open the work report modal.
+    - Fill in starting and ending kilometers, select the campaigns worked on, enter advertisement counts by type, and add any extra work notes.
+    - Click **Download Report** to generate and download the report as an `.ics` calendar event.
+
+## Marker Types
+
+| Type | Shape |
+|---|---|
+| Maxi | Circle inside pin |
+| Classic Keski | Tall rectangle inside pin |
+| Classic Single | Small circle inside pin |
+| Classic Tupla | Twin circles inside pin |
+
 ## Marker Colors
 
-- **Grey**: Base location (not visited, not part of any campaign).
-- **[Campaign Color]**: Campaign-specific location (not visited).
-- **Green**: Any location marked as "Visited" (across all campaigns).
+- **Grey**: Base location (not part of any campaign).
+- **[Campaign Color]**: Campaign-specific location (not yet visited).
+- **Green**: Any location marked as "Visited".
 
 ## Notes
 
 - All data is stored in your browser (IndexedDB and localStorage).
-- You can load multiple campaigns at once and control their visibility.
-- Clearing or importing data will remove all progress
+- You can load multiple campaigns at once and control their visibility independently.
+- Clearing or importing data will remove all existing progress.
