@@ -914,8 +914,8 @@ function createMarkerIcon(color, shape = 'default') {
     html: `<div>
             <svg width="25" height="41" viewBox="0 0 40 65" xmlns="http://www.w3.org/2000/svg">
               <path d="M20 2 C30 2 38 10 38 20 C38 30 20 65 20 65 C20 65 2 30 2 20 C2 10 10 2 20 2 Z"
-                fill="${color}",
-                stroke="black",
+                fill="${color}"
+                stroke="black"
                 stroke-width="1"/>
               ${innerShape}
             </svg>
