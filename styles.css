@@ -124,10 +124,10 @@ html, body {
 
 /* Button container */
 .button-container {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 15px; /* Add margin to separate from slider */
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 15px 15px; /* Add margin to separate from slider */
 }
 
 /* Button styles */
@@ -232,9 +232,9 @@ html, body {
 }
 
 .input-group {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 0.25fr;
   gap: 8px;
-  align-items: center;
 }
 
 .campaign-input {
@@ -395,10 +395,9 @@ html, body {
   padding: 8px;
   background-color: #f8f9fa;
   border-radius: 4px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 0.25fr;
+  gap: 8px;
 }
 
 .grey-markers-toggle .checkbox-label {
@@ -602,6 +601,10 @@ html, body {
   display: block;
   margin: 0;
   padding: 0;
+}
+
+.control-section {
+  display: none;
 }
 
 

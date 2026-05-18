@@ -569,7 +569,7 @@ class UserPreferencesManager {
         const savedState = localStorage.getItem(this.filtersKey);
         return savedState ? JSON.parse(savedState) : {
             showAll: false,
-            clusteringEnabled: true,
+            clusteringEnabled: false,
             clusterRadius: 70
         };
     }
