@@ -1786,7 +1786,61 @@ function openReportModal() {
     modal.style.display = 'flex';
     // Reset form
     document.getElementById('report-form').reset();
+
+    // Populate campaigns dynamically from loaded campaigns
+    const container = document.getElementById('report-campaign-checkboxes');
+    const campaigns = campaignManager.getAllCampaigns();
+
+    if (campaigns.size === 0) {
+      container.innerHTML = '<span class="no-campaigns-text">No campaigns loaded</span>';
+    } else {
+      container.innerHTML = '';
+      campaigns.forEach((campaign, campaignId) => {
+        const label = document.createElement('label');
+        label.className = 'report-checkbox-label';
+        label.innerHTML = `
+          <input type="checkbox" name="campaign" value="${campaign.name}" data-campaign-id="${campaignId}" checked>
+          <span>${campaign.name}</span>
+        `;
+        container.appendChild(label);
+
+        // Recalculate ad counts whenever a campaign checkbox changes
+        label.querySelector('input').addEventListener('change', recalculateAdCounts);
+      });
+    }
+
+    // Calculate initial ad counts based on all checked campaigns
+    recalculateAdCounts();
   }
+}
+
+/**
+ * Recalculates advertisement counts from visited markers in the currently checked campaigns.
+ * Updates the ad count input fields in the report modal.
+ */
+async function recalculateAdCounts() {
+  const checkedBoxes = document.querySelectorAll('input[name="campaign"]:checked');
+  const checkedCampaignIds = Array.from(checkedBoxes).map(cb => cb.dataset.campaignId).filter(Boolean);
+
+  const counts = { maxi: 0, classic_single: 0, classic_keski: 0, classic_tupla: 0 };
+
+  for (const campaignId of checkedCampaignIds) {
+    const markers = await dataManager.getCampaignMarkers(campaignId);
+    markers
+      .filter(m => m.markerVisited)
+      .forEach(m => {
+        const type = getAdvertisementType(m.markerName);
+        if (type === 'maxi') counts.maxi++;
+        else if (type === 'classic_single') counts.classic_single++;
+        else if (type === 'classic_keski') counts.classic_keski++;
+        else if (type === 'classic_tupla') counts.classic_tupla++;
+      });
+  }
+
+  document.getElementById('ad-maxi').value = counts.maxi;
+  document.getElementById('ad-single').value = counts.classic_single;
+  document.getElementById('ad-keski').value = counts.classic_keski;
+  document.getElementById('ad-tupla').value = counts.classic_tupla;
 }
 
 /**

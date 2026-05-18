@@ -174,29 +174,15 @@
           <!-- Campaigns Section -->
           <div class="report-form-section">
             <h4>Campaigns</h4>
-            <div class="report-form-checkboxes">
-              <label class="report-checkbox-label">
-                <input type="checkbox" name="campaign" value="hoviapteekki">
-                <span>Hoviapteekki</span>
-              </label>
-              <label class="report-checkbox-label">
-                <input type="checkbox" name="campaign" value="jkl city">
-                <span>JKL City</span>
-              </label>
-              <label class="report-checkbox-label">
-                <input type="checkbox" name="campaign" value="fonum">
-                <span>Fonum</span>
-              </label>
-              <label class="report-checkbox-label">
-                <input type="checkbox" name="campaign" value="puuhamaa">
-                <span>Puuhamaa</span>
-              </label>
+            <div id="report-campaign-checkboxes" class="report-form-checkboxes">
+              <!-- populated dynamically from loaded campaigns -->
             </div>
           </div>
 
           <!-- Advertisements Section -->
           <div class="report-form-section">
             <h4>Advertisements Changed</h4>
+            <p class="report-form-hint">Auto-calculated from visited markers in selected campaigns. You can still adjust manually.</p>
             <div class="report-form-grid">
               <div class="report-form-field">
                 <label for="ad-maxi">Maxi:</label>
