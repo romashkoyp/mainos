@@ -658,3 +658,222 @@ html, body {
     overflow-x: auto;
   }
 }
+/* Report Modal Styles */
+.report-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.report-modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.report-modal-content {
+  position: relative;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 10001;
+}
+
+.report-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #dee2e6;
+  background-color: #f8f9fa;
+  border-radius: 8px 8px 0 0;
+}
+
+.report-modal-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.report-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.report-modal-close:hover {
+  background-color: #e9ecef;
+  color: #333;
+}
+
+.report-modal-body {
+  padding: 20px;
+}
+
+.report-form-section {
+  margin-bottom: 20px;
+}
+
+.report-form-section h4 {
+  margin: 0 0 12px 0;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.report-form-row {
+  display: flex;
+  gap: 15px;
+}
+
+.report-form-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.report-form-field label {
+  margin-bottom: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.report-form-field input[type="number"],
+.report-form-field textarea {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.report-form-field input[type="number"]:focus,
+.report-form-field textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.report-form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.report-form-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.report-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.report-checkbox-label:hover {
+  background-color: #f8f9fa;
+}
+
+.report-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #007bff;
+}
+
+.report-checkbox-label span {
+  font-size: 14px;
+  color: #333;
+}
+
+.report-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.report-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #dee2e6;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: #5a6268;
+}
+
+/* Mobile responsiveness for report modal */
+@media (max-width: 768px) {
+  .report-modal-content {
+    width: 95%;
+    max-height: 95vh;
+  }
+
+  .report-modal-header {
+    padding: 15px;
+  }
+
+  .report-modal-body {
+    padding: 15px;
+  }
+
+  .report-form-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .report-form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .report-form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .report-form-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

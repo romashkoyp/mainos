@@ -1765,3 +1765,151 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: false });
   }
 });
+// ==================== WORK REPORT MODAL FUNCTIONS ====================
+
+/**
+ * Opens the work report modal
+ */
+function openReportModal() {
+  const modal = document.getElementById('report-modal');
+  if (modal) {
+    modal.style.display = 'flex';
+    // Reset form
+    document.getElementById('report-form').reset();
+  }
+}
+
+/**
+ * Closes the work report modal
+ */
+function closeReportModal() {
+  const modal = document.getElementById('report-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+/**
+ * Normalizes description text for ICS generation
+ * Escapes characters according to RFC 5545
+ * @param {string} text 
+ * @returns {string}
+ */
+function normalizeDescriptionForIcs(text) {
+  if (!text) return text;
+  // normalize CRLF/LF, then escape backslash first
+  text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  text = text.replace(/\\/g, '\\\\');
+  // replace bullets with dash
+  text = text.replace(/\u2022/g, '-');
+  // escape semicolon and comma
+  text = text.replace(/;/g, '\\;').replace(/,/g, '\\,');
+  // convert real newlines to iCalendar escaped newline sequence
+  text = text.replace(/\n/g, '\\n');
+  return text;
+}
+
+/**
+ * Generates and downloads the work report as an ICS file
+ * @param {Event} event - Form submit event
+ */
+function generateWorkReport(event) {
+  event.preventDefault();
+
+  try {
+    // Collect form data
+    const startingKm = document.getElementById('starting-km').value;
+    const endingKm = document.getElementById('ending-km').value;
+    
+    // Get selected campaigns
+    const campaignCheckboxes = document.querySelectorAll('input[name="campaign"]:checked');
+    const selectedCampaigns = Array.from(campaignCheckboxes).map(cb => cb.value);
+    
+    // Get advertisement quantities
+    const adMaxi = document.getElementById('ad-maxi').value || '0';
+    const adSingle = document.getElementById('ad-single').value || '0';
+    const adKeski = document.getElementById('ad-keski').value || '0';
+    const adTupla = document.getElementById('ad-tupla').value || '0';
+    
+    // Get extra work
+    const extraWork = document.getElementById('extra-work').value.trim();
+
+    // Validate required fields
+    if (!startingKm || !endingKm) {
+      alert('Please fill in both Starting KM and Ending KM fields.');
+      return;
+    }
+
+    // Format the description
+    let description = `Starting KM: ${startingKm}\n`;
+    description += `Ending KM: ${endingKm}\n`;
+    description += `Total Distance: ${(parseFloat(endingKm) - parseFloat(startingKm)).toFixed(1)} km\n\n`;
+    
+    if (selectedCampaigns.length > 0) {
+      description += `Campaigns:\n`;
+      selectedCampaigns.forEach(campaign => {
+        description += `• ${campaign}\n`;
+      });
+      description += `\n`;
+    }
+    
+    // Check if any ads were changed
+    const totalAds = parseInt(adMaxi) + parseInt(adSingle) + parseInt(adKeski) + parseInt(adTupla);
+    if (totalAds > 0) {
+      description += `Advertisements Changed:\n`;
+      if (parseInt(adMaxi) > 0) description += `• Maxi: ${adMaxi}\n`;
+      if (parseInt(adSingle) > 0) description += `• Single: ${adSingle}\n`;
+      if (parseInt(adKeski) > 0) description += `• Keski: ${adKeski}\n`;
+      if (parseInt(adTupla) > 0) description += `• Tupla: ${adTupla}\n`;
+      description += `\n`;
+    }
+    
+    if (extraWork) {
+      description += `Extra Work:\n${extraWork}\n`;
+    }
+
+    // Get current date in user's timezone
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1; // 0-indexed
+    const day = now.getDate();
+    
+    // Format date for title (DD.MM.YYYY)
+    const dateStr = `${day.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
+    const title = `Work Report - ${dateStr}`;
+
+    // Create ICS event using the ics.js API (matches test.html usage)
+    // Use full-day range by specifying start and end datetime strings
+    const cal = ics();
+
+    const startStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} 00:00`;
+    const endStr = `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')} 23:59`;
+
+    const normalizedDescription = normalizeDescriptionForIcs(description);
+    cal.addEvent(title, normalizedDescription, '', startStr, endStr);
+
+    // Trigger download using the library helper
+    cal.download(`work-report-${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
+
+    console.log('Work report ICS file generated successfully');
+    
+    // Close modal after successful generation
+    closeReportModal();
+    
+  } catch (error) {
+    console.error('Error generating work report:', error);
+    alert('Error generating work report. Please try again.');
+  }
+}
+
+// Close modal when clicking outside of it
+document.addEventListener('DOMContentLoaded', function() {
+  const modal = document.getElementById('report-modal');
+  if (modal) {
+    modal.addEventListener('click', function(event) {
+      if (event.target === modal) {
+        closeReportModal();
+      }
+    });
+  }
+});

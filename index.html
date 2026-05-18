@@ -113,6 +113,9 @@
           <button onclick="locateUser()" class="btn btn-info" title="Find My Location">
             <i class="fas fa-crosshairs"></i> Find Me
           </button>
+          <button onclick="openReportModal()" class="btn btn-warning" title="Generate Work Report">
+            <i class="fas fa-file-alt"></i> Report
+          </button>
           <button onclick="exportData()" class="btn btn-primary">Export</button>
           <label for="import-file" class="btn btn-success">
             Import
@@ -136,11 +139,106 @@
       </div>
     </div>
   </div>
+
+  <!-- Report Modal -->
+  <div id="report-modal" class="report-modal" style="display: none;">
+    <div class="report-modal-overlay" onclick="closeReportModal()"></div>
+    <div class="report-modal-content">
+      <div class="report-modal-header">
+        <h3>Work Report</h3>
+        <button class="report-modal-close" onclick="closeReportModal()" title="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="report-modal-body">
+        <form id="report-form" onsubmit="generateWorkReport(event)">
+          <!-- Kilometers Section -->
+          <div class="report-form-section">
+            <h4>Kilometers</h4>
+            <div class="report-form-row">
+              <div class="report-form-field">
+                <label for="starting-km">Starting KM:</label>
+                <input type="number" id="starting-km" name="starting-km" required min="0" step="0.1">
+              </div>
+              <div class="report-form-field">
+                <label for="ending-km">Ending KM:</label>
+                <input type="number" id="ending-km" name="ending-km" required min="0" step="0.1">
+              </div>
+            </div>
+          </div>
+
+          <!-- Campaigns Section -->
+          <div class="report-form-section">
+            <h4>Campaigns</h4>
+            <div class="report-form-checkboxes">
+              <label class="report-checkbox-label">
+                <input type="checkbox" name="campaign" value="hoviapteekki">
+                <span>Hoviapteekki</span>
+              </label>
+              <label class="report-checkbox-label">
+                <input type="checkbox" name="campaign" value="jkl city">
+                <span>JKL City</span>
+              </label>
+              <label class="report-checkbox-label">
+                <input type="checkbox" name="campaign" value="fonum">
+                <span>Fonum</span>
+              </label>
+              <label class="report-checkbox-label">
+                <input type="checkbox" name="campaign" value="puuhamaa">
+                <span>Puuhamaa</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Advertisements Section -->
+          <div class="report-form-section">
+            <h4>Advertisements Changed</h4>
+            <div class="report-form-grid">
+              <div class="report-form-field">
+                <label for="ad-maxi">Maxi:</label>
+                <input type="number" id="ad-maxi" name="ad-maxi" min="0" value="0">
+              </div>
+              <div class="report-form-field">
+                <label for="ad-single">Single:</label>
+                <input type="number" id="ad-single" name="ad-single" min="0" value="0">
+              </div>
+              <div class="report-form-field">
+                <label for="ad-keski">Keski:</label>
+                <input type="number" id="ad-keski" name="ad-keski" min="0" value="0">
+              </div>
+              <div class="report-form-field">
+                <label for="ad-tupla">Tupla:</label>
+                <input type="number" id="ad-tupla" name="ad-tupla" min="0" value="0">
+              </div>
+            </div>
+          </div>
+
+          <!-- Extra Work Section -->
+          <div class="report-form-section">
+            <h4>Extra Work</h4>
+            <div class="report-form-field">
+              <textarea id="extra-work" name="extra-work" rows="4" placeholder="e.g., fixing pole 10189 0,5h, shipping adds back 2h"></textarea>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="report-form-actions">
+            <button type="button" class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-download"></i> Download Report
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
   <script src="https://kit.fontawesome.com/91c7a109fb.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/nwcell/ics.js/ics.deps.min.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
