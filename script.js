@@ -1957,8 +1957,8 @@ function generateWorkReport(event) {
 
     console.log('Work report ICS file generated successfully');
     
-    // Close modal after successful generation
-    closeReportModal();
+    // Keep modal open and notify user
+    alert('Report formed successfully as .ics file! Import it to your calendar.');
     
   } catch (error) {
     console.error('Error generating work report:', error);
