@@ -854,18 +854,22 @@ async function updateSpecificMarker(campaignId, locationId, visited) {
 /**
  * Determines the advertisement type from the item name
  * @param {string} name - The name of the advertisement location
- * @returns {string} The advertisement type: 'maxi', 'classic_keski', 'classic_single', or 'default'
+ * @returns {string} The advertisement type: 'maxi', 'classic_keski', 'classic_single', 'classic_tupla', or 'default'
  */
 function getAdvertisementType(name) {
   if (typeof name !== 'string') return 'default';
 
   const lowerName = name.toLowerCase();
-  if (lowerName.includes(' maxi')) {
-    return 'maxi';
+  
+  // Check more specific types FIRST
+  if (lowerName.includes(' classic tupla')) {
+    return 'classic_tupla';
   } else if (lowerName.includes(' classic keski')) {
     return 'classic_keski';
   } else if (lowerName.includes(' classic single')) {
     return 'classic_single';
+  } else if (lowerName.includes(' maxi')) {
+    return 'maxi';
   }
   return 'default';
 }
@@ -876,7 +880,7 @@ function getAdvertisementType(name) {
 /**
  * Creates a dynamic SVG marker icon with customizable color and shape
  * @param {string} color - The fill color for the marker (e.g., '#7B7B7B', '#DC143C', '#228B22')
- * @param {string} shape - The shape type: 'circle', 'rectangle', 'small-circle', or 'default'
+ * @param {string} shape - The shape type: 'circle', 'rectangle', 'small-circle', 'twins' or 'default'
  * @returns {L.DivIcon} A Leaflet divIcon with SVG content
  */
 function createMarkerIcon(color, shape = 'default') {
@@ -894,6 +898,10 @@ function createMarkerIcon(color, shape = 'default') {
     case 'small-circle':
     case 'classic_single':
       innerShape = '<circle cx="20" cy="20" r="6" fill="#FFFFFF" stroke="#000000" stroke-width="1"/>';
+      break;
+    case 'twins':
+    case 'classic_tupla':
+      innerShape = '<circle cx="12" cy="20" r="5" fill="#FFFFFF" stroke="#000000" stroke-width="1"/><circle cx="28" cy="20" r="5" fill="#FFFFFF" stroke="#000000" stroke-width="1"/>';
       break;
     case 'default':
     default:
@@ -991,6 +999,8 @@ function getMarkerIcon(campaignId, color = MARKER_COLORS.GREY) {
       return createMarkerIcon(color, 'classic_keski');
     case 'classic_single':
       return createMarkerIcon(color, 'classic_single');
+    case 'classic_tupla':
+      return createMarkerIcon(color, 'classic_tupla');
     default:
       return createMarkerIcon(color, 'default');
   }
@@ -1441,7 +1451,7 @@ function toggleLegend() {
  * Initializes the legend markers with proper icons
  */
 function initializeLegendMarkers() {
-  const markerTypes = ['maxi', 'classic_keski', 'classic_single'];
+  const markerTypes = ['maxi', 'classic_keski', 'classic_single', 'classic_tupla'];
 
   markerTypes.forEach(type => {
     const legendElement = document.getElementById(`legend-${type.replace('_', '-')}`);
@@ -1878,7 +1888,7 @@ function generateWorkReport(event) {
     const dateStr = `${day.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
     const title = `Work Report - ${dateStr}`;
 
-    // Create ICS event using the ics.js API (matches test.html usage)
+    // Create ICS event using the ics.js API
     // Use full-day range by specifying start and end datetime strings
     const cal = ics();
 
