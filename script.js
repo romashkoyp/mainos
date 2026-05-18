@@ -1566,7 +1566,10 @@ function getGoogleSheetData() {
 async function initializeApp() {
   getGoogleSheetData();
   const savedFilters = prefsManager.loadFilterState();
-  document.getElementById('grey-markers-toggle').checked = savedFilters.showAll;
+  const greyMarkersToggle = document.getElementById('grey-markers-toggle');
+  if (greyMarkersToggle) {
+    greyMarkersToggle.checked = savedFilters.showAll;
+  }
 
   try {
     // Check if base data already exists in IndexedDB
