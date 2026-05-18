@@ -10,8 +10,6 @@
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
       crossorigin=""
     />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="styles.css" />
 
     <!-- https://dexie.org/docs/Tutorial/Hello-World -->
@@ -126,20 +124,6 @@
             <input type="file" id="import-file" accept=".json" onchange="importData(event)">
           </label>
         </div>
-        <div class="control-section">
-          <div class="clustering-toggle">
-            <label class="checkbox-label">
-              <input
-                type="checkbox"
-                id="clustering-toggle"
-                checked
-                onchange="toggleClustering(this.checked)"
-                class="checkbox-input"
-              />
-              <span>Clustering markers</span>
-            </label>
-          </div>
-        </div>
       </div>
     </div>
   </div>
@@ -226,7 +210,6 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/nwcell/ics.js/ics.deps.min.js"></script>
   <script src="script.js"></script>
 </body>

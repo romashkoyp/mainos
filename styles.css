@@ -562,32 +562,6 @@ html, body {
   display: none;
 }
 
-/* Clustering toggle */
-.clustering-toggle {
-  margin: 10px 0;
-  padding: 8px;
-  background-color: #f8f9fa;
-  border-radius: 4px;
-}
-
-.clustering-toggle .checkbox-label {
-  font-size: 12px;
-  margin: 0;
-}
-
-/* Legacy slider styles (kept for backward compatibility) */
-.slider-container {
-  margin: 10px 0;
-}
-
-.slider-container label {
-  display: block;
-  margin-bottom: 5px;
-}
-
-.slider-container input[type="range"] {
-  width: 100%;
-}
 
 .leaflet-touch .leaflet-bar a {
 	display: none;

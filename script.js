@@ -548,15 +548,12 @@ class UserPreferencesManager {
     }
 
     /**
-     * Saves the current state of UI filters (toggles, clustering) to localStorage.
+     * Saves the current state of UI filters to localStorage.
      */
     saveFilterState() {
         const greyToggle = document.getElementById('grey-markers-toggle');
-        const clusteringToggle = document.getElementById('clustering-toggle');
         const filterState = {
-            showAll: greyToggle ? greyToggle.checked : false,
-            clusteringEnabled: clusteringToggle ? clusteringToggle.checked : true,
-            clusterRadius: clusterRadius, // Save current cluster radius value
+            showAll: greyToggle ? greyToggle.checked : false
         };
         localStorage.setItem(this.filtersKey, JSON.stringify(filterState));
     }
@@ -568,9 +565,7 @@ class UserPreferencesManager {
     loadFilterState() {
         const savedState = localStorage.getItem(this.filtersKey);
         return savedState ? JSON.parse(savedState) : {
-            showAll: false,
-            clusteringEnabled: true,
-            clusterRadius: 70
+            showAll: false
         };
     }
 }
@@ -762,22 +757,19 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 
 
 /**
- * Finds a marker by its ID and opens its popup, zooming to it if necessary.
+ * Finds a marker by its ID and opens its popup.
  * This is useful for re-opening a popup after re-rendering the map.
  * @param {number} locationId - The ID of the location whose popup should be opened.
  */
 function reopenPopup(locationId) {
     if (!markersLayer) return;
 
-    // Use getLayers() to access all markers, even those inside clusters
     const allMarkers = markersLayer.getLayers();
     const targetMarker = allMarkers.find(m => m.locationId === locationId);
 
     if (targetMarker) {
-        // This function will zoom to the cluster and execute the callback
-        markersLayer.zoomToShowLayer(targetMarker, function() {
-            targetMarker.openPopup();
-        });
+        map.panTo(targetMarker.getLatLng());
+        targetMarker.openPopup();
     }
 }
 
@@ -814,7 +806,6 @@ async function updateSpecificMarker(campaignId, locationId, visited) {
   if (!markersLayer) return;
 
   try {
-    // Find the marker in the cluster layer
     const allMarkers = markersLayer.getLayers();
     const targetMarker = allMarkers.find(m =>
       m.locationId === locationId && m.campaignId === campaignId
@@ -1046,29 +1037,8 @@ function getCampaignType(campaignData) {
 }
 
 // Global variables for map layer and settings
-let markersLayer; // Holds the marker cluster layer
-let clusterRadius = 70; // Default clustering radius
+let markersLayer;
 let userLocationMarker = null; // To hold the marker for the user's position
-
-/**
- * Toggles clustering on/off and re-renders the map.
- * @param {boolean} enabled - Whether clustering should be enabled.
- */
-function toggleClustering(enabled) {
-  clusterRadius = enabled ? 70 : 0;
-  prefsManager.saveFilterState();
-  renderMapMarkers();
-}
-
-/**
- * Legacy function for backward compatibility with slider input.
- * @param {string} value - The new radius value from the slider.
- */
-function updateClusterRadius(value) {
-  clusterRadius = parseInt(value);
-  prefsManager.saveFilterState();
-  renderMapMarkers();
-}
 
 /**
  * Formats an ISO timestamp string into a readable format (DD-MM-YYYY HH:MM).
@@ -1139,14 +1109,9 @@ function createPopupContent(placeData, isCampaign) {
  * - If for markerID active several campaigns - show all of them
  */
 async function renderMapMarkers() {
-    // Remove old layer and create a new one with the current cluster radius
+    // Remove old layer and create a new marker layer
     if (markersLayer) map.removeLayer(markersLayer);
-    markersLayer = L.markerClusterGroup({
-        maxClusterRadius: clusterRadius,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true
-    });
+    markersLayer = L.layerGroup();
 
     const showGreyMarkers = document.getElementById('grey-markers-toggle').checked;
     const showCampaignMarkers = campaignManager.getVisibleCampaigns().length > 0;
@@ -1602,12 +1567,6 @@ async function initializeApp() {
   getGoogleSheetData();
   const savedFilters = prefsManager.loadFilterState();
   document.getElementById('grey-markers-toggle').checked = savedFilters.showAll;
-
-  // Restore clustering toggle state
-  const clusteringToggle = document.getElementById('clustering-toggle');
-  const clusteringEnabled = savedFilters.clusteringEnabled !== undefined ? savedFilters.clusteringEnabled : true;
-  clusteringToggle.checked = clusteringEnabled;
-  clusterRadius = clusteringEnabled ? 50 : 0;
 
   try {
     // Check if base data already exists in IndexedDB
