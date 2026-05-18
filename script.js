@@ -1113,7 +1113,8 @@ async function renderMapMarkers() {
     if (markersLayer) map.removeLayer(markersLayer);
     markersLayer = L.layerGroup();
 
-    const showGreyMarkers = document.getElementById('grey-markers-toggle').checked;
+    const greyMarkersToggle = document.getElementById('grey-markers-toggle');
+    const showGreyMarkers = greyMarkersToggle ? greyMarkersToggle.checked : false;
     const showCampaignMarkers = campaignManager.getVisibleCampaigns().length > 0;
 
     try {
@@ -1197,7 +1198,8 @@ async function renderMapMarkers() {
  */
 async function updateStatistics() {
     try {
-        const showGreyMarkers = document.getElementById('grey-markers-toggle').checked;
+        const greyMarkersToggle = document.getElementById('grey-markers-toggle');
+        const showGreyMarkers = greyMarkersToggle ? greyMarkersToggle.checked : false;
         const showCampaignMarkers = campaignManager.getVisibleCampaigns().length > 0;
 
         let totalCount = 0;
