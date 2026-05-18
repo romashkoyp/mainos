@@ -162,11 +162,11 @@
             <div class="report-form-row">
               <div class="report-form-field">
                 <label for="starting-km">Starting KM:</label>
-                <input type="number" id="starting-km" name="starting-km" required min="0" step="0.1">
+                <input type="number" id="starting-km" name="starting-km" required min="0" step="1">
               </div>
               <div class="report-form-field">
                 <label for="ending-km">Ending KM:</label>
-                <input type="number" id="ending-km" name="ending-km" required min="0" step="0.1">
+                <input type="number" id="ending-km" name="ending-km" required min="0" step="1">
               </div>
             </div>
           </div>
@@ -182,23 +182,22 @@
           <!-- Advertisements Section -->
           <div class="report-form-section">
             <h4>Advertisements Changed</h4>
-            <p class="report-form-hint">Auto-calculated from visited markers in selected campaigns. You can still adjust manually.</p>
             <div class="report-form-grid">
               <div class="report-form-field">
                 <label for="ad-maxi">Maxi:</label>
-                <input type="number" id="ad-maxi" name="ad-maxi" min="0" value="0">
+                <input type="number" id="ad-maxi" name="ad-maxi" min="0" value="0" step="1">
               </div>
               <div class="report-form-field">
                 <label for="ad-single">Single:</label>
-                <input type="number" id="ad-single" name="ad-single" min="0" value="0">
+                <input type="number" id="ad-single" name="ad-single" min="0" value="0" step="1">
               </div>
               <div class="report-form-field">
                 <label for="ad-keski">Keski:</label>
-                <input type="number" id="ad-keski" name="ad-keski" min="0" value="0">
+                <input type="number" id="ad-keski" name="ad-keski" min="0" value="0" step="1">
               </div>
               <div class="report-form-field">
                 <label for="ad-tupla">Tupla:</label>
-                <input type="number" id="ad-tupla" name="ad-tupla" min="0" value="0">
+                <input type="number" id="ad-tupla" name="ad-tupla" min="0" value="0" step="1">
               </div>
             </div>
           </div>
@@ -207,7 +206,7 @@
           <div class="report-form-section">
             <h4>Extra Work</h4>
             <div class="report-form-field">
-              <textarea id="extra-work" name="extra-work" rows="4" placeholder="e.g., fixing pole 10189 0,5h, shipping adds back 2h"></textarea>
+              <textarea id="extra-work" name="extra-work" rows="4"></textarea>
             </div>
           </div>
 

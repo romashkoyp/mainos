@@ -795,19 +795,20 @@ html, body {
 }
 
 .report-form-checkboxes {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px 8px;
 }
 
 .report-checkbox-label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   cursor: pointer;
-  padding: 6px;
+  padding: 4px 6px;
   border-radius: 4px;
   transition: background-color 0.2s;
+  min-width: 0;
 }
 
 .report-checkbox-label:hover {
@@ -815,15 +816,19 @@ html, body {
 }
 
 .report-checkbox-label input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
   cursor: pointer;
   accent-color: #007bff;
 }
 
 .report-checkbox-label span {
-  font-size: 13px;
+  font-size: 12px;
   color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .no-campaigns-text {
@@ -834,8 +839,29 @@ html, body {
 
 .report-form-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.report-form-grid .report-form-field {
+  flex-direction: column;
+}
+
+.report-form-grid .report-form-field label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: #6c757d;
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+
+.report-form-grid .report-form-field input[type="number"] {
+  width: 100%;
+  padding: 5px 4px;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .report-form-actions {
@@ -877,8 +903,12 @@ html, body {
   }
 
   .report-form-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .report-form-checkboxes {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .report-form-actions {
