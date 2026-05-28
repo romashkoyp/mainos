@@ -58,6 +58,23 @@ A map-based tool to track visited locations and campaign-specific locations acro
     - Fill in starting and ending kilometers, select the campaigns worked on, enter advertisement counts by type, and add any extra work notes.
     - Click **Download Report** to generate and download the report as an `.ics` calendar event.
 
+## UX
+
+Screens layout:
+
+- **Map View**: main canvas with base markers, campaign markers, and current location focus, standalone button for "Find My Location".
+- **Control Panel First Screen - Location Tracker**:
+  - default view: campaign load field only (input + button load); 
+  - when campaign uploaded: progress bar (total, visited, not visited), campaign list (visibility, clear action), campaign load field (input + button load).
+- **Control Panel Second Screen - Settings** (navigated from Control Panel First Screen):
+  - city filter
+  - legend
+  - import/export buttons
+  - report button
+  - base marker toggle
+  - navigation back to first screen
+- **Marker Popup**: location details plus the **Visited** action to update progress.
+
 ## Marker Types
 
 | Type | Shape |
