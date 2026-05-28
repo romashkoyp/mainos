@@ -1143,16 +1143,28 @@ html, body {
 /* ========== MOBILE RESPONSIVE ========== */
 @media (max-width: 768px) {
   #container {
-    top: 12px;
-    bottom: auto;
-    left: 12px;
-    right: 12px;
-    width: auto;
-    max-width: 400px;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    max-width: none;
     padding: var(--space-md);
+    border-radius: 0;
   }
 
   #container.container-minimized {
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    height: auto;
+    max-width: 400px;
+    border-radius: var(--radius-lg);
     overflow-y: hidden;
   }
 
@@ -1166,6 +1178,12 @@ html, body {
 
   .campaign-name {
     max-width: 180px;
+  }
+
+  #tracker-content {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
   }
 
   .stats-row-compact {
@@ -1182,7 +1200,7 @@ html, body {
   }
 
   .settings-actions {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   /* FAB positioning for mobile */
@@ -1191,6 +1209,7 @@ html, body {
     right: 12px;
     width: 48px;
     height: 48px;
+    z-index: 999;
   }
 
   .fab-find-me svg {
@@ -1199,17 +1218,31 @@ html, body {
   }
 
   /* Report modal mobile */
+  .report-modal {
+    align-items: stretch;
+    justify-content: stretch;
+  }
+
   .report-modal-content {
-    width: 95%;
-    max-height: 92vh;
+    width: 100%;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   .report-modal-header {
     padding: var(--space-base);
+    border-radius: 0;
   }
 
   .report-modal-body {
     padding: var(--space-base);
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   .report-form-row {
