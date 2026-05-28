@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mainos</title>
+    <meta name="description" content="Map-based location tracker for campaign progress across Finnish cities. Load campaigns, mark locations as visited, and monitor progress.">
+    <title>Mainos — Location Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -23,125 +27,169 @@
 <body>
   <div id="map">
     <div id="container">
+      <!-- ===== HEADER ===== -->
       <div class="header">
         <h3 id="tracker-title">Location Tracker</h3>
-        <button id="minimize-btn" class="minimize-btn" onclick="toggleMinimize()">
-          <i class="fas fa-minus"></i>
-        </button>
+        <div class="header-actions">
+          <button id="settings-btn" class="header-icon-btn" onclick="showScreen('settings')" title="Settings" aria-label="Open settings">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </button>
+          <button id="minimize-btn" class="header-icon-btn" onclick="toggleMinimize()" title="Minimize panel" aria-label="Minimize panel">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
       </div>
+
       <div id="tracker-content">
-        <div class="progress-stats-container">
-          <div class="progress-section">
-            <div class="progress-header">
-              <span>Progress:</span>
-              <span id="progress-percent">0%</span>
+        <!-- ===== SCREEN 1: TRACKER ===== -->
+        <div id="screen-tracker" class="panel-screen active">
+
+          <!-- Progress & Stats (shown when campaigns loaded) -->
+          <div class="progress-stats-container" id="progress-stats-container">
+            <div class="progress-section">
+              <div class="progress-header">
+                <span class="progress-label">Progress</span>
+                <span id="progress-percent" class="progress-value">0%</span>
+              </div>
+              <div class="progress-bar-container">
+                <div id="progress-bar"></div>
+              </div>
             </div>
-            <div class="progress-bar-container">
-              <div id="progress-bar"></div>
+            <div class="stats-compact">
+              <div class="stats-row-compact">
+                <span class="stat-item">Total: <span id="total-count" class="stat-number">0</span></span>
+                <span class="stat-item visited-text">Visited: <span id="visited-count" class="stat-number visited-count">0</span></span>
+                <span class="stat-item not-visited-text">Remaining: <span id="not-visited-count" class="stat-number not-visited-count">0</span></span>
+              </div>
             </div>
           </div>
-          <div class="stats-compact">
-            <div class="stats-row-compact">
-              <span>Total: <span id="total-count">0</span></span>
-              <span class="visited-text">Visited: <span id="visited-count" class="visited-count">0</span></span>
-              <span class="not-visited-text">Not Visited: <span id="not-visited-count" class="not-visited-count">0</span></span>
+
+          <!-- Campaign List (shown when campaigns loaded) -->
+          <div id="campaign-info" class="campaign-info" style="display: none;">
+          </div>
+
+          <!-- Campaign Input (always visible) -->
+          <div class="campaign-input-section">
+            <div class="input-group">
+              <input type="text" id="campaign-id-input" class="campaign-input" placeholder="Paste Odoo campaign URL" aria-label="Campaign URL">
+              <button onclick="loadCampaignData(event)" class="btn btn-primary" id="load-campaign-btn">Load</button>
             </div>
           </div>
         </div>
-        <div class="city-filter-section">
-          <label for="city-filter-dropdown">Filter by City:</label>
-          <select id="city-filter-dropdown" onchange="applyCityFilter(this.value)" class="city-filter-select">
-            <option value="">All Cities</option>
-          </select>
-        </div>
-        <div id="campaign-info" class="campaign-info" style="display: none;">
-        </div>
-        <div class="grey-markers-toggle">
-          <label class="checkbox-label">
-            <input
-              type="checkbox"
-              id="grey-markers-toggle"
-              onchange="saveStateAndRender()"
-              class="checkbox-input"
-            />
-            <span>Base markers</span>
-          </label>
-          <button onclick="toggleLegend()" class="btn btn-legend" title="Show/Hide marker legend">
-            <i class="fas fa-map-marker-alt"></i> Legend
+
+        <!-- ===== SCREEN 2: SETTINGS ===== -->
+        <div id="screen-settings" class="panel-screen">
+          <!-- Back navigation -->
+          <button class="btn-back" onclick="showScreen('tracker')" aria-label="Back to tracker">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            <span>Back</span>
           </button>
-        </div>
-        <div id="marker-legend" class="marker-legend" style="display: none;">
-          <div class="legend-header">
-            <span>Marker Types</span>
+
+          <!-- City Filter -->
+          <div class="settings-section">
+            <label for="city-filter-dropdown" class="settings-label">Filter by City</label>
+            <select id="city-filter-dropdown" onchange="applyCityFilter(this.value)" class="city-filter-select" aria-label="Filter markers by city">
+              <option value="">All Cities</option>
+            </select>
           </div>
-          <div class="legend-items">
-            <div class="legend-item">
-              <div class="legend-marker" id="legend-maxi"></div>
-              <span>Maxi</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-marker" id="legend-classic-keski"></div>
-              <span>Classic Keski</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-marker" id="legend-classic-single"></div>
-              <span>Classic Single</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-marker" id="legend-classic-tupla"></div>
-              <span>Classic Tupla</span>
-            </div>
+
+          <!-- Base Markers Toggle -->
+          <div class="settings-section">
+            <label class="toggle-row">
+              <span class="toggle-label">Base markers</span>
+              <input
+                type="checkbox"
+                id="grey-markers-toggle"
+                onchange="saveStateAndRender()"
+                class="toggle-input"
+              />
+              <span class="toggle-slider"></span>
+            </label>
           </div>
-          <div class="legend-colors">
-            <div class="legend-color-item">
-              <div class="legend-color-marker" style="background-color: #7B7B7B;"></div>
-              <span>Base locations (grey)</span>
-            </div>
-            <div class="legend-color-item">
-              <div class="legend-color-marker" style="background-color: #CB2B3E;"></div>
-              <span>Campaign locations (any color)</span>
-            </div>
-            <div class="legend-color-item">
-              <div class="legend-color-marker" style="background-color: #2AAD27;"></div>
-              <span>Visited locations (green)</span>
-            </div>
-          </div>
-        </div>
-        <div class="campaign-input-section">
-          <div class="input-group">
-            <input type="text" id="campaign-id-input" class="campaign-input" placeholder="Paste Odoo campaign URL here">
-            <button onclick="loadCampaignData(event)" class="btn btn-warning">Load</button>
-          </div>
-        </div>
-        <div class="button-container">
-          <button onclick="locateUser()" class="btn btn-info" title="Find My Location">
-            <i class="fas fa-crosshairs"></i> Find Me
-          </button>
-          <button onclick="openReportModal()" class="btn btn-warning" title="Generate Work Report">
-            <i class="fas fa-file-alt"></i> Report
-          </button>
-          <button onclick="exportData()" class="btn btn-primary">Export</button>
-          <label for="import-file" class="btn btn-success">
-            Import
-            <input type="file" id="import-file" accept=".json" onchange="importData(event)">
-          </label>
-        </div>
-        <div class="control-section">
-          <div class="clustering-toggle">
-            <label class="checkbox-label">
+
+          <!-- Clustering Toggle -->
+          <div class="settings-section">
+            <label class="toggle-row">
+              <span class="toggle-label">Clustering markers</span>
               <input
                 type="checkbox"
                 id="clustering-toggle"
                 checked
                 onchange="toggleClustering(this.checked)"
-                class="checkbox-input"
+                class="toggle-input"
               />
-              <span>Clustering markers</span>
+              <span class="toggle-slider"></span>
             </label>
           </div>
+
+          <!-- Legend -->
+          <div class="settings-section">
+            <button onclick="toggleLegend()" class="btn btn-ghost" id="legend-toggle-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Marker Legend
+            </button>
+            <div id="marker-legend" class="marker-legend" style="display: none;">
+              <div class="legend-items">
+                <div class="legend-item">
+                  <div class="legend-marker" id="legend-maxi"></div>
+                  <span>Maxi</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-marker" id="legend-classic-keski"></div>
+                  <span>Classic Keski</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-marker" id="legend-classic-single"></div>
+                  <span>Classic Single</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-marker" id="legend-classic-tupla"></div>
+                  <span>Classic Tupla</span>
+                </div>
+              </div>
+              <div class="legend-colors">
+                <div class="legend-color-item">
+                  <div class="legend-color-marker" style="background-color: #7B7B7B;"></div>
+                  <span>Base locations (grey)</span>
+                </div>
+                <div class="legend-color-item">
+                  <div class="legend-color-marker" style="background-color: #CB2B3E;"></div>
+                  <span>Campaign locations (any color)</span>
+                </div>
+                <div class="legend-color-item">
+                  <div class="legend-color-marker" style="background-color: #2AAD27;"></div>
+                  <span>Visited locations (green)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="settings-actions">
+            <button onclick="exportData()" class="btn btn-secondary" id="export-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export
+            </button>
+            <label for="import-file" class="btn btn-secondary" id="import-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Import
+              <input type="file" id="import-file" accept=".json" onchange="importData(event)">
+            </label>
+          </div>
+        <div class="settings-actions-bottom">
+            <button onclick="openReportModal()" class="btn btn-primary" title="Generate Work Report" id="report-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Report
+            </button>
+        </div>
         </div>
       </div>
     </div>
+
+    <!-- ===== FLOATING "FIND ME" BUTTON ===== -->
+    <button id="find-me-fab" class="fab-find-me" onclick="locateUser()" title="Find My Location" aria-label="Find my location">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+    </button>
   </div>
 
   <!-- Report Modal -->
@@ -150,8 +198,8 @@
     <div class="report-modal-content">
       <div class="report-modal-header">
         <h3>Work Report</h3>
-        <button class="report-modal-close" onclick="closeReportModal()" title="Close">
-          <i class="fas fa-times"></i>
+        <button class="report-modal-close" onclick="closeReportModal()" title="Close" aria-label="Close report modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="report-modal-body">
@@ -184,19 +232,19 @@
             <h4>Advertisements Changed</h4>
             <div class="report-form-grid">
               <div class="report-form-field">
-                <label for="ad-maxi">Maxi:</label>
+                <label for="ad-maxi">Maxi</label>
                 <input type="number" id="ad-maxi" name="ad-maxi" min="0" value="0" step="1">
               </div>
               <div class="report-form-field">
-                <label for="ad-single">Single:</label>
+                <label for="ad-single">Single</label>
                 <input type="number" id="ad-single" name="ad-single" min="0" value="0" step="1">
               </div>
               <div class="report-form-field">
-                <label for="ad-keski">Keski:</label>
+                <label for="ad-keski">Keski</label>
                 <input type="number" id="ad-keski" name="ad-keski" min="0" value="0" step="1">
               </div>
               <div class="report-form-field">
-                <label for="ad-tupla">Tupla:</label>
+                <label for="ad-tupla">Tupla</label>
                 <input type="number" id="ad-tupla" name="ad-tupla" min="0" value="0" step="1">
               </div>
             </div>
@@ -212,9 +260,10 @@
 
           <!-- Action Buttons -->
           <div class="report-form-actions">
-            <button type="button" class="btn btn-secondary" onclick="closeReportModal()">Cancel</button>
+            <button type="button" class="btn btn-outline" onclick="closeReportModal()">Cancel</button>
             <button type="submit" class="btn btn-primary">
-              <i class="fas fa-download"></i> Download Report
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Report
             </button>
           </div>
         </form>

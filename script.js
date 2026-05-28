@@ -1344,6 +1344,13 @@ function updateCampaignUI() {
     return;
   }
 
+    if (campaigns.size > 0) {
+      const progressStatsContainer = document.getElementById('progress-stats-container');
+      if (progressStatsContainer) {
+        progressStatsContainer.style.display = 'block';
+      }
+  }
+
   let campaignHTML = '<div class="campaigns-container">';
 
   campaigns.forEach((campaign, campaignId) => {
@@ -1513,11 +1520,34 @@ function toggleMinimize() {
   if (container.classList.contains('container-minimized')) {
     container.classList.remove('container-minimized');
     content.style.display = 'block';
-    minimizeBtn.innerHTML = '<i class="fas fa-minus"></i>';
+    minimizeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
   } else {
     container.classList.add('container-minimized');
     content.style.display = 'none';
-    minimizeBtn.innerHTML = '<i class="fas fa-plus"></i>';
+    minimizeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
+  }
+}
+
+/**
+ * Switches between the tracker and settings screens in the control panel.
+ * @param {string} screenName - 'tracker' or 'settings'
+ */
+function showScreen(screenName) {
+  const trackerScreen = document.getElementById('screen-tracker');
+  const settingsScreen = document.getElementById('screen-settings');
+  const settingsBtn = document.getElementById('settings-btn');
+  const title = document.getElementById('tracker-title');
+
+  if (screenName === 'settings') {
+    trackerScreen.classList.remove('active');
+    settingsScreen.classList.add('active');
+    if (settingsBtn) settingsBtn.style.display = 'none';
+    if (title) title.textContent = 'Settings';
+  } else {
+    settingsScreen.classList.remove('active');
+    trackerScreen.classList.add('active');
+    if (settingsBtn) settingsBtn.style.display = '';
+    if (title) title.textContent = 'Location Tracker';
   }
 }
 
@@ -1966,7 +1996,7 @@ function generateWorkReport(event) {
   }
 }
 
-// Close modal when clicking outside of it
+// Close modal when clicking outside of it or pressing Escape
 document.addEventListener('DOMContentLoaded', function() {
   const modal = document.getElementById('report-modal');
   if (modal) {
@@ -1976,4 +2006,14 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // Close report modal on Escape key
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+      const reportModal = document.getElementById('report-modal');
+      if (reportModal && reportModal.style.display !== 'none') {
+        closeReportModal();
+      }
+    }
+  });
 });
