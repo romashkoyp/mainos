@@ -262,31 +262,30 @@ class GoogleDataParser {
      * Parses the mock or real Google JSON data and merges with base markers
      */
     static async fetchAndMergeData(googleDataUrl) {
-        // Fetch google data
         const googleResponse = await fetch(googleDataUrl);
         const googleData = await googleResponse.json();
 
-        // Fetch base markers (assuming base_markers.json is in same dir)
         const baseResponse = await fetch('base_markers.json');
         const baseMarkers = await baseResponse.json();
 
-        const campaignMarkers = [];
-        let campaignName = "Google Campaign";
-        let campaignId = null;
-
-        if (googleData && googleData.length > 0) {
-            campaignName = googleData[0].campaignName || campaignName;
-            // Generate a campaign ID based on name or random
-            campaignId = campaignName.replace(/\s+/g, '-').toLowerCase() + '-' + Date.now();
-        }
+        const campaignsMap = new Map(); // Store distinct campaigns
+        const timestamp = Date.now();
 
         for (const item of googleData) {
             const poleIdStr = String(item.poleId);
-            // find base marker whose name contains the poleId
             const baseMarker = baseMarkers.find(bm => bm.name && bm.name.includes(poleIdStr));
             
-            campaignMarkers.push({
-                campaignId: campaignId,
+            const cName = item.campaignName || "Google Campaign";
+            
+            // Auto-generate or retrieve an ID specific to this campaignName
+            let cId = campaignsMap.get(cName)?.id;
+            if (!cId) {
+                cId = cName.replace(/\s+/g, '-').toLowerCase() + '-' + timestamp;
+                campaignsMap.set(cName, { id: cId, markers: [] });
+            }
+
+            campaignsMap.get(cName).markers.push({
+                campaignId: cId,
                 campaignOrder: null,
                 markerId: baseMarker ? baseMarker.id : item.poleId,
                 markerName: baseMarker ? baseMarker.name : `Pole ${item.poleId}`,
@@ -294,18 +293,21 @@ class GoogleDataParser {
                 markerLng: baseMarker ? baseMarker.lng : item.markerLng,
                 campaignStartDate: item.campaignStartDate,
                 campaignEndDate: item.campaignEndDate,
-                campaignName: item.campaignName,
+                campaignName: cName,
                 markerVisited: false,
                 markerDateVisited: null,
                 status: item.status || null
             });
         }
         
+        // Return an array of distinct campaigns plus the baseMarkers
         return {
-            campaignId,
-            campaignName,
-            campaignMarkers,
-            baseMarkers // To populate allMarkers table if needed
+            campaigns: Array.from(campaignsMap.entries()).map(([name, data]) => ({
+                campaignName: name,
+                campaignId: data.id,
+                campaignMarkers: data.markers
+            })),
+            baseMarkers
         };
     }
 }
@@ -742,53 +744,45 @@ async function processGoogleData(googleUrl) {
   try {
     const data = await GoogleDataParser.fetchAndMergeData(googleUrl);
     
-    if (!data || !data.campaignMarkers || data.campaignMarkers.length === 0) {
+    if (!data || !data.campaigns || data.campaigns.length === 0) {
       alert('No campaign data found in the provided JSON');
       return;
     }
 
-    const { campaignId, campaignName, campaignMarkers, baseMarkers } = data;
+    const { campaigns, baseMarkers } = data;
 
-    // Check existing again since we couldn't derive the ID until the fetch
-    const existingMarkers = await dataManager.getCampaignMarkers(campaignId);
-    if (existingMarkers.length > 0) {
-      const confirmed = confirm(
-        `Campaign "${campaignName}" already exists in the database.\n` +
-        'Do you want to overwrite the existing data for this campaign?'
-      );
-      if (!confirmed) {
-        return;
-      }
-    }
-
-    // Clear existing data for this campaign to avoid duplicates
-    await dataManager.clearCampaignData(campaignId);
-
-    // Process base markers if available
+    // Process base markers if available (done once)
     if (baseMarkers && baseMarkers.length > 0) {
       const existingMarkerCount = await db.allMarkers.count();
       if (existingMarkerCount === 0) {
-        // Bulk add directly, no re-mapping needed because base_markers.json is already formatted
         await db.allMarkers.bulkAdd(baseMarkers);
         console.log(`Base markers added to IndexedDB (${baseMarkers.length} markers)`);
       }
     }
 
-    // Bulk add all campaign markers
-    if (campaignMarkers.length > 0) {
-      await db.markersCampaigns.bulkAdd(campaignMarkers);
-      console.log(`Campaign data for ${campaignId} added to IndexedDB (${campaignMarkers.length} markers)`);
+    // Process each distinct campaign found in the JSON
+    for (const campaign of campaigns) {
+        const { campaignId, campaignName, campaignMarkers } = campaign;
 
-      // Add campaign to campaign manager
-      campaignManager.addCampaign(
-        campaignId,
-        campaignName
-      );
+        const existingMarkers = await dataManager.getCampaignMarkers(campaignId);
+        if (existingMarkers.length > 0) {
+          const confirmed = confirm(`Campaign "${campaignName}" already exists in the database.\nOverwrite?`);
+          if (!confirmed) continue; // Skip to next campaign if they decline
+        }
 
-      // Update campaign UI and re-render markers
-      updateCampaignUI();
-      renderMapMarkers();
+        await dataManager.clearCampaignData(campaignId);
+
+        if (campaignMarkers.length > 0) {
+          await db.markersCampaigns.bulkAdd(campaignMarkers);
+          console.log(`Campaign data for ${campaignId} added to IndexedDB (${campaignMarkers.length} markers)`);
+          
+          campaignManager.addCampaign(campaignId, campaignName);
+        }
     }
+
+    updateCampaignUI();
+    renderMapMarkers();
+
   } catch (error) {
     console.error('Error processing google data:', error);
     throw error;
