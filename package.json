@@ -1,0 +1,26 @@
+{
+  "name": "mainos",
+  "version": "1.0.0",
+  "description": "A map-based tool to track visited locations and campaign-specific locations across Finnish cities.",
+  "main": "script.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romashkoyp/mainos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/romashkoyp/mainos/issues"
+  },
+  "homepage": "https://github.com/romashkoyp/mainos#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.60.0",
+    "@types/node": "^25.9.1"
+  }
+}
