@@ -5,6 +5,10 @@ db.version(1).stores({
   markersCampaigns: '[campaignId+markerId], campaignName, campaignStartDate, campaignEndDate, markerName, markerLat, markerLng, markerVisited, markerDateVisited'
 });
 
+db.version(2).stores({
+  markersCampaigns: '[campaignId+markerId], campaignName, campaignStartDate, campaignEndDate, markerName, markerLat, markerLng, markerVisited, markerDateVisited, status'
+});
+
 /**
  * Manages marker data operations using IndexedDB for storage.
  * Handles status tracking, timestamps, and campaign-specific data.
@@ -252,6 +256,60 @@ class OdooHtmlParser {
         };
     }
 }
+
+class GoogleDataParser {
+    /**
+     * Parses the mock or real Google JSON data and merges with base markers
+     */
+    static async fetchAndMergeData(googleDataUrl) {
+        // Fetch google data
+        const googleResponse = await fetch(googleDataUrl);
+        const googleData = await googleResponse.json();
+
+        // Fetch base markers (assuming base_markers.json is in same dir)
+        const baseResponse = await fetch('base_markers.json');
+        const baseMarkers = await baseResponse.json();
+
+        const campaignMarkers = [];
+        let campaignName = "Google Campaign";
+        let campaignId = null;
+
+        if (googleData && googleData.length > 0) {
+            campaignName = googleData[0].campaignName || campaignName;
+            // Generate a campaign ID based on name or random
+            campaignId = campaignName.replace(/\s+/g, '-').toLowerCase() + '-' + Date.now();
+        }
+
+        for (const item of googleData) {
+            const poleIdStr = String(item.poleId);
+            // find base marker whose name contains the poleId
+            const baseMarker = baseMarkers.find(bm => bm.name && bm.name.includes(poleIdStr));
+            
+            campaignMarkers.push({
+                campaignId: campaignId,
+                campaignOrder: null,
+                markerId: baseMarker ? baseMarker.id : item.poleId,
+                markerName: baseMarker ? baseMarker.name : `Pole ${item.poleId}`,
+                markerLat: baseMarker ? baseMarker.lat : item.markerLat,
+                markerLng: baseMarker ? baseMarker.lng : item.markerLng,
+                campaignStartDate: item.campaignStartDate,
+                campaignEndDate: item.campaignEndDate,
+                campaignName: item.campaignName,
+                markerVisited: false,
+                markerDateVisited: null,
+                status: item.status || null
+            });
+        }
+        
+        return {
+            campaignId,
+            campaignName,
+            campaignMarkers,
+            baseMarkers // To populate allMarkers table if needed
+        };
+    }
+}
+
 const dataManager = new MarkerDataManager();
 
 /**
@@ -677,6 +735,67 @@ async function processCampaignData(odooUrl) {
 }
 
 /**
+ * Initiates the fetching and processing of campaign-specific data from Google API / JSON.
+ * @param {string} googleUrl - The JSON endpoint URL
+ */
+async function processGoogleData(googleUrl) {
+  try {
+    const data = await GoogleDataParser.fetchAndMergeData(googleUrl);
+    
+    if (!data || !data.campaignMarkers || data.campaignMarkers.length === 0) {
+      alert('No campaign data found in the provided JSON');
+      return;
+    }
+
+    const { campaignId, campaignName, campaignMarkers, baseMarkers } = data;
+
+    // Check existing again since we couldn't derive the ID until the fetch
+    const existingMarkers = await dataManager.getCampaignMarkers(campaignId);
+    if (existingMarkers.length > 0) {
+      const confirmed = confirm(
+        `Campaign "${campaignName}" already exists in the database.\n` +
+        'Do you want to overwrite the existing data for this campaign?'
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    // Clear existing data for this campaign to avoid duplicates
+    await dataManager.clearCampaignData(campaignId);
+
+    // Process base markers if available
+    if (baseMarkers && baseMarkers.length > 0) {
+      const existingMarkerCount = await db.allMarkers.count();
+      if (existingMarkerCount === 0) {
+        // Bulk add directly, no re-mapping needed because base_markers.json is already formatted
+        await db.allMarkers.bulkAdd(baseMarkers);
+        console.log(`Base markers added to IndexedDB (${baseMarkers.length} markers)`);
+      }
+    }
+
+    // Bulk add all campaign markers
+    if (campaignMarkers.length > 0) {
+      await db.markersCampaigns.bulkAdd(campaignMarkers);
+      console.log(`Campaign data for ${campaignId} added to IndexedDB (${campaignMarkers.length} markers)`);
+
+      // Add campaign to campaign manager
+      campaignManager.addCampaign(
+        campaignId,
+        campaignName
+      );
+
+      // Update campaign UI and re-render markers
+      updateCampaignUI();
+      renderMapMarkers();
+    }
+  } catch (error) {
+    console.error('Error processing google data:', error);
+    throw error;
+  }
+}
+
+/**
  * Handles the "Load" button click. It reads the Odoo URL from the input,
  * validates it, and initiates the fetch process.
  */
@@ -690,29 +809,38 @@ async function loadCampaignData(event) {
   }
 
   // Validate URL format
-  if (!inputUrl.includes('kengurumedia.odoo.com') || !inputUrl.includes('/orders/') || !inputUrl.includes('access_token=')) {
-    alert('Invalid Odoo URL format. Please paste the full campaign URL from Odoo.\n\nExample:\nhttps://kengurumedia.odoo.com/fi/my/orders/4380/poles-map?access_token=...');
+  const isOdoo = inputUrl.includes('kengurumedia.odoo.com') && inputUrl.includes('/orders/') && inputUrl.includes('access_token=');
+  const isGoogle = inputUrl.endsWith('.json') || inputUrl.includes('google');
+
+  if (!isOdoo && !isGoogle) {
+    alert('Invalid URL format. Please paste either a valid Odoo URL or a Google data source URL/JSON.');
     return;
   }
 
-  // Extract campaign ID from URL
-  const extractedCampaignId = OdooHtmlParser.extractCampaignIdFromUrl(inputUrl);
-  if (!extractedCampaignId) {
-    alert('Could not extract campaign ID from URL. Please check the URL format.');
-    return;
+  let extractedCampaignId = null;
+  if (isOdoo) {
+      // Extract campaign ID from URL
+      extractedCampaignId = OdooHtmlParser.extractCampaignIdFromUrl(inputUrl);
+      if (!extractedCampaignId) {
+        alert('Could not extract campaign ID from URL. Please check the URL format.');
+        return;
+      }
   }
 
-  // Check if campaign already exists in IndexedDB
-  const existingMarkers = await dataManager.getCampaignMarkers(extractedCampaignId);
-  if (existingMarkers.length > 0) {
-    const campaignName = existingMarkers[0].campaignName || 'Campaign';
-    const confirmed = confirm(
-      `Campaign "${campaignName}" already exists in the database.\n` +
-      'Do you want to overwrite the existing data for this campaign?'
-    );
-    if (!confirmed) {
-      return;
-    }
+  // If it's a google URL, we might not have a campaignId before fetching, so we'll check existence inside the generic flow or after fetch.
+  if (extractedCampaignId) {
+      // Check if campaign already exists in IndexedDB
+      const existingMarkers = await dataManager.getCampaignMarkers(extractedCampaignId);
+      if (existingMarkers.length > 0) {
+        const campaignName = existingMarkers[0].campaignName || 'Campaign';
+        const confirmed = confirm(
+          `Campaign "${campaignName}" already exists in the database.\n` +
+          'Do you want to overwrite the existing data for this campaign?'
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
   }
 
   // Show loading state
@@ -725,7 +853,11 @@ async function loadCampaignData(event) {
     inputElement.value = '';
 
     // Wait for campaign data to fully load
-    await processCampaignData(inputUrl);
+    if (isOdoo) {
+      await processCampaignData(inputUrl);
+    } else {
+      await processGoogleData(inputUrl);
+    }
 
     // UPDATE THE CITY DROPDOWN LIST WITH NEW LOCATIONS
     await initializeCityFilter();
@@ -1103,7 +1235,14 @@ function createPopupContent(placeData, isCampaign) {
         if (placeData.markerDateVisited) {
             visitedHtml = `<div class="popup-info"><i class="fas fa-check-circle"></i>Visited on: ${formatTimestamp(placeData.markerDateVisited)}</div>`;
         }
+        
+        let statusHtml = '';
+        if (placeData.status) {
+            statusHtml = `<div class="popup-info"><i class="fas fa-info-circle"></i>Status: <strong>${placeData.status}</strong></div>`;
+        }
+
         campaignInfoHtml = `
+            ${statusHtml}
             ${visitedHtml}
             <div class="popup-info"><i class="fas fa-building"></i>Campaign: ${placeData.campaignName}</div>
             <div class="popup-info"><i class="fas fa-calendar-alt"></i>Start Date: ${formatDate(placeData.campaignStartDate)}</div>
