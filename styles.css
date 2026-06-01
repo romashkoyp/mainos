@@ -182,6 +182,8 @@ html, body {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: var(--outline-variant) transparent;
+  display: flex;
+  flex-direction: column;
 }
 
 #tracker-content::-webkit-scrollbar {
@@ -203,7 +205,10 @@ html, body {
 }
 
 .panel-screen.active {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 @keyframes screenFadeIn {
@@ -233,6 +238,7 @@ html, body {
 /* --- Campaign Input Section --- */
 .campaign-input-section {
   margin-bottom: var(--space-md);
+  flex-shrink: 0;
 }
 
 .input-group {
@@ -371,7 +377,8 @@ html, body {
   border-radius: var(--radius-md);
   margin-bottom: var(--space-md);
   border: 1px solid var(--border-subtle);
-  display: none; /* Hidden by default, shown when campaign is active */
+  display: none;
+  flex-shrink: 0;
 }
 
 .progress-section {
@@ -455,7 +462,9 @@ html, body {
 /* --- Campaign List --- */
 .campaign-info {
   margin-bottom: var(--space-md);
-  max-height: 180px;
+  flex: 1;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
@@ -1169,11 +1178,11 @@ html, body {
   }
 
   .campaigns-container {
-    max-height: 150px;
+    max-height: none;
   }
 
   .campaign-info {
-    max-height: 160px;
+    max-height: none;
   }
 
   .campaign-name {
