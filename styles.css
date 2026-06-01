@@ -179,13 +179,11 @@ html, body {
 
 /* --- Panel Screens --- */
 #tracker-content {
-  overflow-y: auto;
+  overflow: hidden;
   flex: 1;
   min-height: 0;
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--outline-variant) transparent;
   display: flex;
   flex-direction: column;
 }

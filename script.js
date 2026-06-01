@@ -1649,14 +1649,14 @@ function toggleMinimize() {
   const content = document.getElementById('tracker-content');
   const minimizeBtn = document.getElementById('minimize-btn');
   
-  // The class 'container-minimized' is now used by CSS to control layout
+  // The class 'container-minimized' is used by CSS to control layout and visibility
   if (container.classList.contains('container-minimized')) {
     container.classList.remove('container-minimized');
-    content.style.display = 'block';
+    content.style.display = '';
     minimizeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>';
   } else {
     container.classList.add('container-minimized');
-    content.style.display = 'none';
+    content.style.display = '';
     minimizeBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>';
   }
 }
