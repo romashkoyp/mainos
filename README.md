@@ -5,10 +5,10 @@ A map-based tool to track visited locations and campaign-specific locations acro
 ## Features
 
 - **Base Locations**: All available locations are shown as **grey markers**.
-- **Campaigns**: Load one or more campaigns by pasting an Odoo URL. Each campaign gets a unique color for its markers.
+- **Campaigns**: Load one or more campaigns by pasting an Odoo campaign URL or a Google data source URL/JSON. Each campaign gets a unique color for its markers.
 - **Visited Tracking**: Mark any campaign location as "Visited" (turns green). Progress is saved automatically.
 - **City Filter**: Filter markers by city using the dropdown.
-- **Clustering**: Toggle clustering of markers on/off for easier viewing.
+- **Google URL Refetch**: Refetch campaign data from a saved Google data source URL to refresh markers and sync.
 - **Legend**: View a legend explaining marker types and colors.
 - **Import/Export**: Export your progress to a file or import it later to restore.
 - **Campaign Management**: Show/hide individual campaigns, clear a specific campaign, or clear all campaigns.
@@ -22,8 +22,8 @@ A map-based tool to track visited locations and campaign-specific locations acro
    The map displays all base locations as grey markers.
 
 2. **Load Campaign Data**  
-   - Paste the full Odoo campaign URL (e.g., `https://kengurumedia.odoo.com/...`) and click **Load**.
-   - The tool automatically fetches and parses the campaign locations.
+   - Paste the full Odoo campaign URL (e.g., `https://kengurumedia.odoo.com/...`) or a Google data source URL/JSON (e.g., a Google Script macro URL) and click **Load**.
+   - The tool automatically fetches, parses, and (for Google data) groups campaign locations by campaign name.
    - Campaign locations appear in a unique color.
    - You can load multiple campaigns; each will have its own color and toggle.
 
@@ -40,23 +40,24 @@ A map-based tool to track visited locations and campaign-specific locations acro
 5. **Marker Legend**  
    - Click the **Legend** button to view marker types and color meanings.
 
-6. **Clustering**  
-   - Use the **Clustering markers** toggle to enable/disable marker clustering.
-
-7. **Campaign Management**  
+6. **Campaign Management**  
    - Use the **Clear** button next to a campaign to remove it.
 
-8. **Save & Restore Progress**  
+7. **Save & Restore Progress**  
    - Click **Export** to save your progress to a file.
    - Click **Import** to load a previously saved file.
 
-9. **Find My Location**  
+8. **Find My Location**  
    - Click **Find Me** to center the map on your current location.
 
-10. **Work Report**  
-    - Click **Report** to open the work report modal.
-    - Fill in starting and ending kilometers, select the campaigns worked on, enter advertisement counts by type, and add any extra work notes.
-    - Click **Download Report** to generate and download the report as an `.ics` calendar event.
+9. **Work Report**  
+   - Click **Report** to open the work report modal.
+   - Fill in starting and ending kilometers, select the campaigns worked on, enter advertisement counts by type, and add any extra work notes.
+   - Click **Download Report** to generate and download the report as an `.ics` calendar event.
+
+10. **Refetch Google Data**  
+    - If a Google data source was loaded, click the **Google URL** button in the Settings screen to refetch the latest data.
+    - This updates campaign data from the Google source and preserves Odoo campaigns.
 
 ## UX
 
@@ -64,13 +65,14 @@ Screens layout:
 
 - **Map View**: main canvas with base markers, campaign markers, and current location focus, standalone button for "Find My Location".
 - **Control Panel First Screen - Location Tracker**:
-  - default view: campaign load field only (input + button load); 
+  - Starts **minimized by default** showing only the header, and can be expanded by clicking the header title or the expand icon.
+  - default view (when expanded): campaign load field only (input + button load); 
   - when campaign uploaded: progress bar (total, visited, not visited), campaign list (visibility, clear action), campaign load field (input + button load).
 - **Control Panel Second Screen - Settings** (navigated from Control Panel First Screen):
   - city filter
   - legend
   - import/export buttons
-  - report button
+  - Google URL (refetch) and Report buttons
   - base marker toggle
   - navigation back to first screen
 - **Marker Popup**: location details plus the **Visited** action to update progress.
@@ -94,4 +96,5 @@ Screens layout:
 
 - All data is stored in your browser (IndexedDB and localStorage).
 - You can load multiple campaigns at once and control their visibility independently.
+- Refetching Google data replaces only Google campaign markers, keeping Odoo campaigns and other progress intact.
 - Clearing or importing data will remove all existing progress.
