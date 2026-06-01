@@ -21,6 +21,8 @@ test.describe('Campaign Loading functionality', () => {
 
     // 2. Locate the input field and enter the provided URL
     const inputUrl = 'https://kengurumedia.odoo.com/fi/my/orders/3902/poles-map?access_token=0ca5dedc-8364-4fe2-ada6-4758b215684b';
+    const maximizeButton = page.locator('#minimize-btn');
+    await maximizeButton.click(); // Maximize the window to ensure all elements are visible
     const campaignInput = page.locator('#campaign-id-input');
     await campaignInput.fill(inputUrl);
 
