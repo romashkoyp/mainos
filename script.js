@@ -275,7 +275,7 @@ class GoogleDataParser {
             const poleIdStr = String(item.poleId);
             const baseMarker = baseMarkers.find(bm => bm.name && bm.name.includes(poleIdStr));
             
-            const cName = item.campaignName || "Google Campaign";
+            const cName = item.campaignName.toLowerCase() || "Google Campaign";
             
             // Auto-generate or retrieve an ID specific to this campaignName
             let cId = campaignsMap.get(cName)?.id;
