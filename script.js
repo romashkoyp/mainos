@@ -1964,9 +1964,17 @@ async function refetchGoogleData() {
   refetchBtn.disabled = true;
 
   try {
-    // Clear all campaign data (db.version(2).stores / markersCampaigns)
-    await db.markersCampaigns.clear();
-    campaignManager.clearAllCampaigns();
+    // Clear only campaign data related to the Google campaign source (where campaignOrder is null or undefined)
+    const allCampaignMarkers = await db.markersCampaigns.toArray();
+    const googleCampaignIds = [...new Set(
+      allCampaignMarkers
+        .filter(m => m.campaignOrder === null || m.campaignOrder === undefined)
+        .map(m => m.campaignId)
+    )];
+    for (const id of googleCampaignIds) {
+      await dataManager.clearCampaignData(id);
+      campaignManager.removeCampaign(id);
+    }
 
     await processGoogleData(savedUrl);
     await initializeCityFilter();
