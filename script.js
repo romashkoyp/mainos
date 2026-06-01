@@ -14,113 +14,113 @@ db.version(2).stores({
  * Handles status tracking, timestamps, and campaign-specific data.
  */
 class MarkerDataManager {
-    constructor() {
-        this.db = db;
-    }
+  constructor() {
+    this.db = db;
+  }
 
-    /**
-     * Gets the visited status for a campaign marker
-     * @param {string} campaignId - The campaign ID
-     * @param {number} markerId - The marker ID
-     * @returns {Promise<boolean>} The visited status
-     */
-    async getStatus(campaignId, markerId) {
-        try {
-            const marker = await this.db.markersCampaigns.get([campaignId, markerId]);
-            return marker ? marker.markerVisited : false;
-        } catch (error) {
-            console.error('Error getting marker status:', error);
-            return false;
-        }
+  /**
+   * Gets the visited status for a campaign marker
+   * @param {string} campaignId - The campaign ID
+   * @param {number} markerId - The marker ID
+   * @returns {Promise<boolean>} The visited status
+   */
+  async getStatus(campaignId, markerId) {
+    try {
+      const marker = await this.db.markersCampaigns.get([campaignId, markerId]);
+      return marker ? marker.markerVisited : false;
+    } catch (error) {
+      console.error('Error getting marker status:', error);
+      return false;
     }
+  }
 
-    /**
-     * Gets the visited timestamp for a campaign marker
-     * @param {string} campaignId - The campaign ID
-     * @param {number} markerId - The marker ID
-     * @returns {Promise<string|null>} The visited timestamp or null
-     */
-    async getTimestamp(campaignId, markerId) {
-        try {
-            const marker = await this.db.markersCampaigns.get([campaignId, markerId]);
-            return marker ? marker.markerDateVisited : null;
-        } catch (error) {
-            console.error('Error getting marker timestamp:', error);
-            return null;
-        }
+  /**
+   * Gets the visited timestamp for a campaign marker
+   * @param {string} campaignId - The campaign ID
+   * @param {number} markerId - The marker ID
+   * @returns {Promise<string|null>} The visited timestamp or null
+   */
+  async getTimestamp(campaignId, markerId) {
+    try {
+      const marker = await this.db.markersCampaigns.get([campaignId, markerId]);
+      return marker ? marker.markerDateVisited : null;
+    } catch (error) {
+      console.error('Error getting marker timestamp:', error);
+      return null;
     }
+  }
 
-    /**
-     * Updates the visited status and timestamp for a campaign marker
-     * @param {string} campaignId - The campaign ID
-     * @param {number} markerId - The marker ID
-     * @param {boolean} visited - The new visited status
-     * @returns {Promise<void>}
-     */
-    async updateMarkerStatus(campaignId, markerId, visited) {
-        try {
-            const updateData = {
-                markerVisited: visited,
-                markerDateVisited: visited ? new Date().toISOString() : null
-            };
-            await this.db.markersCampaigns.update([campaignId, markerId], updateData);
-        } catch (error) {
-            console.error('Error updating marker status:', error);
-        }
+  /**
+   * Updates the visited status and timestamp for a campaign marker
+   * @param {string} campaignId - The campaign ID
+   * @param {number} markerId - The marker ID
+   * @param {boolean} visited - The new visited status
+   * @returns {Promise<void>}
+   */
+  async updateMarkerStatus(campaignId, markerId, visited) {
+    try {
+      const updateData = {
+        markerVisited: visited,
+        markerDateVisited: visited ? new Date().toISOString() : null
+      };
+      await this.db.markersCampaigns.update([campaignId, markerId], updateData);
+    } catch (error) {
+      console.error('Error updating marker status:', error);
     }
+  }
 
-    /**
-     * Gets all campaign markers for a specific campaign
-     * @param {string} campaignId - The campaign ID
-     * @returns {Promise<Array>} Array of campaign markers
-     */
-    async getCampaignMarkers(campaignId) {
-        try {
-            return await this.db.markersCampaigns.where('campaignId').equals(campaignId).toArray();
-        } catch (error) {
-            console.error('Error getting campaign markers:', error);
-            return [];
-        }
+  /**
+   * Gets all campaign markers for a specific campaign
+   * @param {string} campaignId - The campaign ID
+   * @returns {Promise<Array>} Array of campaign markers
+   */
+  async getCampaignMarkers(campaignId) {
+    try {
+      return await this.db.markersCampaigns.where('campaignId').equals(campaignId).toArray();
+    } catch (error) {
+      console.error('Error getting campaign markers:', error);
+      return [];
     }
+  }
 
-    /**
-     * Gets all unique campaign IDs
-     * @returns {Promise<Array>} Array of unique campaign IDs
-     */
-    async getAllCampaignIds() {
-        try {
-            const campaigns = await this.db.markersCampaigns.toArray();
-            return [...new Set(campaigns.map(c => c.campaignId))];
-        } catch (error) {
-            console.error('Error getting campaign IDs:', error);
-            return [];
-        }
+  /**
+   * Gets all unique campaign IDs
+   * @returns {Promise<Array>} Array of unique campaign IDs
+   */
+  async getAllCampaignIds() {
+    try {
+      const campaigns = await this.db.markersCampaigns.toArray();
+      return [...new Set(campaigns.map(c => c.campaignId))];
+    } catch (error) {
+      console.error('Error getting campaign IDs:', error);
+      return [];
     }
+  }
 
-    /**
-     * Clears all campaign data for a specific campaign
-     * @param {string} campaignId - The campaign ID to clear
-     * @returns {Promise<void>}
-     */
-    async clearCampaignData(campaignId) {
-        try {
-            await this.db.markersCampaigns.where('campaignId').equals(campaignId).delete();
-        } catch (error) {
-            console.error('Error clearing campaign data:', error);
-        }
+  /**
+   * Clears all campaign data for a specific campaign
+   * @param {string} campaignId - The campaign ID to clear
+   * @returns {Promise<void>}
+   */
+  async clearCampaignData(campaignId) {
+    try {
+      await this.db.markersCampaigns.where('campaignId').equals(campaignId).delete();
+    } catch (error) {
+      console.error('Error clearing campaign data:', error);
     }
+  }
 
-    /**
-     * Clears all campaign data
-     * @returns {Promise<void>}
-     */
-    async clearAllCampaignData() {
-        try {
-            await this.db.markersCampaigns.clear();
-        } catch (error) {
-            console.error('Error clearing all campaign data:', error);
-        }
+  /**
+   * Clears all campaign data
+   * @returns {Promise<void>}
+   */
+  async clearAllCampaignData() {
+    try {
+      await this.db.markersCampaigns.clear();
+    } catch (error) {
+      console.error('Error clearing all campaign data:', error);
     }
+  }
 }
 
 
@@ -128,188 +128,188 @@ class MarkerDataManager {
  * Utility functions for parsing Odoo HTML responses
  */
 class OdooHtmlParser {
-    /**
-     * Fetches HTML from a URL using CORS proxy
-     * @param {string} url - The Odoo URL to fetch
-     * @returns {Promise<string>} The HTML content
-     */
-    static async fetchHtml(url) {
-        const corsProxyUrl = 'https://corsproxy.io/?';
-        const proxiedUrl = corsProxyUrl + encodeURIComponent(url);
-        const response = await fetch(proxiedUrl);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch: ${response.status}`);
-        }
-        return await response.text();
+  /**
+   * Fetches HTML from a URL using CORS proxy
+   * @param {string} url - The Odoo URL to fetch
+   * @returns {Promise<string>} The HTML content
+   */
+  static async fetchHtml(url) {
+    const corsProxyUrl = 'https://corsproxy.io/?';
+    const proxiedUrl = corsProxyUrl + encodeURIComponent(url);
+    const response = await fetch(proxiedUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.status}`);
+    }
+    return await response.text();
+  }
+
+  /**
+   * Extracts JSON data from a script tag by ID
+   * @param {string} html - The HTML content
+   * @param {string} scriptId - The ID of the script tag
+   * @returns {Array} Parsed JSON array
+   */
+  static extractJsonFromScript(html, scriptId) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const scriptElement = doc.getElementById(scriptId);
+
+    if (!scriptElement) {
+      console.warn(`Script tag with id "${scriptId}" not found`);
+      return [];
     }
 
-    /**
-     * Extracts JSON data from a script tag by ID
-     * @param {string} html - The HTML content
-     * @param {string} scriptId - The ID of the script tag
-     * @returns {Array} Parsed JSON array
-     */
-    static extractJsonFromScript(html, scriptId) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const scriptElement = doc.getElementById(scriptId);
-        
-        if (!scriptElement) {
-            console.warn(`Script tag with id "${scriptId}" not found`);
-            return [];
-        }
-        
-        try {
-            const jsonText = scriptElement.textContent || '[]';
-            const data = JSON.parse(jsonText);
-            return this.decodeUnicodeInData(data);
-        } catch (error) {
-            console.error(`Error parsing JSON from script tag "${scriptId}":`, error);
-            return [];
-        }
+    try {
+      const jsonText = scriptElement.textContent || '[]';
+      const data = JSON.parse(jsonText);
+      return this.decodeUnicodeInData(data);
+    } catch (error) {
+      console.error(`Error parsing JSON from script tag "${scriptId}":`, error);
+      return [];
+    }
+  }
+
+  /**
+   * Decodes Unicode escape sequences in marker data
+   * @param {Array} data - Array of marker objects
+   * @returns {Array} Data with decoded Unicode strings
+   */
+  static decodeUnicodeInData(data) {
+    return data.map(item => {
+      const decoded = { ...item };
+      if (decoded.name && typeof decoded.name === 'string') {
+        decoded.name = this.decodeUnicode(decoded.name);
+      }
+      return decoded;
+    });
+  }
+
+  /**
+   * Decodes Unicode escape sequences in a string
+   * @param {string} str - String with Unicode escapes (e.g., "Jyv\u00e4skyl\u00e4")
+   * @returns {string} Decoded string (e.g., "Jyväskylä")
+   */
+  static decodeUnicode(str) {
+    return str.replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
+      return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
+    });
+  }
+
+  /**
+   * Extracts campaign ID from Odoo URL
+   * @param {string} url - The Odoo URL
+   * @returns {string|null} The campaign ID or null
+   */
+  static extractCampaignIdFromUrl(url) {
+    const match = url.match(/access_token=([a-f0-9-]+)/);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Extracts order number from Odoo URL
+   * @param {string} url - The Odoo URL
+   * @returns {string|null} The order number or null
+   */
+  static extractOrderFromUrl(url) {
+    const match = url.match(/\/orders\/(\d+)\//);
+    return match ? match[1] : null;
+  }
+
+  /**
+   * Extracts campaign name from HTML
+   * @param {string} html - The HTML content
+   * @returns {string} The campaign name
+   */
+  static extractCampaignName(html) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const h3Element = doc.querySelector('h3');
+    return h3Element ? h3Element.textContent.trim() : 'Unknown Campaign';
+  }
+
+  /**
+* Extracts campaign dates from HTML for a specific marker
+* @param {string} html - The HTML content
+* @param {number} markerId - The marker ID
+* @returns {Object} Object with startDate and endDate
+*/
+  static extractCampaignDates(html, markerId) {
+    const rowRegex = new RegExp(`<tr class="pole-table-row"[^>]*data-line-id="${markerId}"[^>]*>([\\s\\S]*?)<\\/tr>`);
+    const rowMatch = html.match(rowRegex);
+
+    if (!rowMatch) {
+      return { startDate: null, endDate: null };
     }
 
-    /**
-     * Decodes Unicode escape sequences in marker data
-     * @param {Array} data - Array of marker objects
-     * @returns {Array} Data with decoded Unicode strings
-     */
-    static decodeUnicodeInData(data) {
-        return data.map(item => {
-            const decoded = { ...item };
-            if (decoded.name && typeof decoded.name === 'string') {
-                decoded.name = this.decodeUnicode(decoded.name);
-            }
-            return decoded;
-        });
+    const rowContent = rowMatch[1];
+    const spanRegex = /<span>(.*?)<\/span>/g;
+    const spans = [];
+    let spanMatch;
+
+    while ((spanMatch = spanRegex.exec(rowContent)) !== null) {
+      spans.push(spanMatch[1].trim());
     }
 
-    /**
-     * Decodes Unicode escape sequences in a string
-     * @param {string} str - String with Unicode escapes (e.g., "Jyv\u00e4skyl\u00e4")
-     * @returns {string} Decoded string (e.g., "Jyväskylä")
-     */
-    static decodeUnicode(str) {
-        return str.replace(/\\u[\dA-Fa-f]{4}/g, (match) => {
-            return String.fromCharCode(parseInt(match.replace(/\\u/g, ''), 16));
-        });
-    }
-
-    /**
-     * Extracts campaign ID from Odoo URL
-     * @param {string} url - The Odoo URL
-     * @returns {string|null} The campaign ID or null
-     */
-    static extractCampaignIdFromUrl(url) {
-        const match = url.match(/access_token=([a-f0-9-]+)/);
-        return match ? match[1] : null;
-    }
-
-    /**
-     * Extracts order number from Odoo URL
-     * @param {string} url - The Odoo URL
-     * @returns {string|null} The order number or null
-     */
-    static extractOrderFromUrl(url) {
-        const match = url.match(/\/orders\/(\d+)\//);
-        return match ? match[1] : null;
-    }
-
-    /**
-     * Extracts campaign name from HTML
-     * @param {string} html - The HTML content
-     * @returns {string} The campaign name
-     */
-    static extractCampaignName(html) {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const h3Element = doc.querySelector('h3');
-        return h3Element ? h3Element.textContent.trim() : 'Unknown Campaign';
-    }
-
-        /**
-     * Extracts campaign dates from HTML for a specific marker
-     * @param {string} html - The HTML content
-     * @param {number} markerId - The marker ID
-     * @returns {Object} Object with startDate and endDate
-     */
-    static extractCampaignDates(html, markerId) {
-        const rowRegex = new RegExp(`<tr class="pole-table-row"[^>]*data-line-id="${markerId}"[^>]*>([\\s\\S]*?)<\\/tr>`);
-        const rowMatch = html.match(rowRegex);
-        
-        if (!rowMatch) {
-            return { startDate: null, endDate: null };
-        }
-        
-        const rowContent = rowMatch[1];
-        const spanRegex = /<span>(.*?)<\/span>/g;
-        const spans = [];
-        let spanMatch;
-        
-        while ((spanMatch = spanRegex.exec(rowContent)) !== null) {
-            spans.push(spanMatch[1].trim());
-        }
-        
-        return {
-            startDate: spans[0] || null,
-            endDate: spans[1] || null
-        };
-    }
+    return {
+      startDate: spans[0] || null,
+      endDate: spans[1] || null
+    };
+  }
 }
 
 class GoogleDataParser {
-    /**
-     * Parses the mock or real Google JSON data and merges with base markers
-     */
-    static async fetchAndMergeData(googleDataUrl) {
-        const googleResponse = await fetch(googleDataUrl);
-        const googleData = await googleResponse.json();
+  /**
+   * Parses the mock or real Google JSON data and merges with base markers
+   */
+  static async fetchAndMergeData(googleDataUrl) {
+    const googleResponse = await fetch(googleDataUrl);
+    const googleData = await googleResponse.json();
 
-        const baseResponse = await fetch('base_markers.json');
-        const baseMarkers = await baseResponse.json();
+    const baseResponse = await fetch('base_markers.json');
+    const baseMarkers = await baseResponse.json();
 
-        const campaignsMap = new Map(); // Store distinct campaigns
-        const timestamp = Date.now();
+    const campaignsMap = new Map(); // Store distinct campaigns
+    const timestamp = Date.now();
 
-        for (const item of googleData) {
-            const poleIdStr = String(item.poleId);
-            const baseMarker = baseMarkers.find(bm => bm.name && bm.name.includes(poleIdStr));
-            
-            const cName = item.campaignName.toLowerCase() || "Google Campaign";
-            
-            // Auto-generate or retrieve an ID specific to this campaignName
-            let cId = campaignsMap.get(cName)?.id;
-            if (!cId) {
-                cId = cName.replace(/\s+/g, '-').toLowerCase() + '-' + timestamp;
-                campaignsMap.set(cName, { id: cId, markers: [] });
-            }
+    for (const item of googleData) {
+      const poleIdStr = String(item.poleId);
+      const baseMarker = baseMarkers.find(bm => bm.name && bm.name.includes(poleIdStr));
 
-            campaignsMap.get(cName).markers.push({
-                campaignId: cId,
-                campaignOrder: null,
-                markerId: baseMarker ? baseMarker.id : item.poleId,
-                markerName: baseMarker ? baseMarker.name : `Pole ${item.poleId}`,
-                markerLat: baseMarker ? baseMarker.lat : item.markerLat,
-                markerLng: baseMarker ? baseMarker.lng : item.markerLng,
-                campaignStartDate: item.campaignStartDate,
-                campaignEndDate: item.campaignEndDate,
-                campaignName: cName,
-                markerVisited: false,
-                markerDateVisited: null,
-                status: item.status || null
-            });
-        }
-        
-        // Return an array of distinct campaigns plus the baseMarkers
-        return {
-            campaigns: Array.from(campaignsMap.entries()).map(([name, data]) => ({
-                campaignName: name,
-                campaignId: data.id,
-                campaignMarkers: data.markers
-            })),
-            baseMarkers
-        };
+      const cName = item.campaignName.toLowerCase() || "Google Campaign";
+
+      // Auto-generate or retrieve an ID specific to this campaignName
+      let cId = campaignsMap.get(cName)?.id;
+      if (!cId) {
+        cId = cName.replace(/\s+/g, '-').toLowerCase() + '-' + timestamp;
+        campaignsMap.set(cName, { id: cId, markers: [] });
+      }
+
+      campaignsMap.get(cName).markers.push({
+        campaignId: cId,
+        campaignOrder: null,
+        markerId: baseMarker ? baseMarker.id : item.poleId,
+        markerName: baseMarker ? baseMarker.name : `Pole ${item.poleId}`,
+        markerLat: baseMarker ? baseMarker.lat : item.markerLat,
+        markerLng: baseMarker ? baseMarker.lng : item.markerLng,
+        campaignStartDate: item.campaignStartDate,
+        campaignEndDate: item.campaignEndDate,
+        campaignName: cName,
+        markerVisited: false,
+        markerDateVisited: null,
+        status: item.status || null
+      });
     }
+
+    // Return an array of distinct campaigns plus the baseMarkers
+    return {
+      campaigns: Array.from(campaignsMap.entries()).map(([name, data]) => ({
+        campaignName: name,
+        campaignId: data.id,
+        campaignMarkers: data.markers
+      })),
+      baseMarkers
+    };
+  }
 }
 
 const dataManager = new MarkerDataManager();
@@ -318,138 +318,138 @@ const dataManager = new MarkerDataManager();
  * Manages multiple campaigns with individual visibility controls and color assignments.
  */
 class CampaignManager {
-    constructor() {
-        this.campaigns = new Map(); // campaignId -> {name, color, visible}
-        this.colorIndex = 0;
-        this.loadCampaignSettings();
+  constructor() {
+    this.campaigns = new Map(); // campaignId -> {name, color, visible}
+    this.colorIndex = 0;
+    this.loadCampaignSettings();
+  }
+
+  /**
+   * Adds a new campaign or updates an existing one
+   * @param {string} campaignId - The campaign ID
+   * @param {string} campaignName - The campaign name
+   */
+  addCampaign(campaignId, campaignName) {
+    if (!this.campaigns.has(campaignId)) {
+      // Assign a new color for new campaigns
+      const color = CAMPAIGN_COLORS[this.colorIndex % CAMPAIGN_COLORS.length];
+      this.colorIndex++;
+
+      this.campaigns.set(campaignId, {
+        name: campaignName,
+        color: color,
+        visible: true
+      });
+    } else {
+      // Update existing campaign info
+      const campaign = this.campaigns.get(campaignId);
+      campaign.name = campaignName;
     }
+    this.saveCampaignSettings();
+  }
 
-    /**
-     * Adds a new campaign or updates an existing one
-     * @param {string} campaignId - The campaign ID
-     * @param {string} campaignName - The campaign name
-     */
-    addCampaign(campaignId, campaignName) {
-        if (!this.campaigns.has(campaignId)) {
-            // Assign a new color for new campaigns
-            const color = CAMPAIGN_COLORS[this.colorIndex % CAMPAIGN_COLORS.length];
-            this.colorIndex++;
+  /**
+   * Removes a campaign
+   * @param {string} campaignId - The campaign ID to remove
+   */
+  removeCampaign(campaignId) {
+    this.campaigns.delete(campaignId);
+    this.saveCampaignSettings();
+  }
 
-            this.campaigns.set(campaignId, {
-                name: campaignName,
-                color: color,
-                visible: true
-            });
-        } else {
-            // Update existing campaign info
-            const campaign = this.campaigns.get(campaignId);
-            campaign.name = campaignName;
+  /**
+   * Gets campaign color
+   * @param {string} campaignId - The campaign ID
+   * @returns {string} The campaign color
+   */
+  getCampaignColor(campaignId) {
+    const campaign = this.campaigns.get(campaignId);
+    return campaign ? campaign.color : MARKER_COLORS.RED;
+  }
+
+  /**
+   * Gets campaign visibility
+   * @param {string} campaignId - The campaign ID
+   * @returns {boolean} Whether the campaign is visible
+   */
+  isCampaignVisible(campaignId) {
+    const campaign = this.campaigns.get(campaignId);
+    return campaign ? campaign.visible : true;
+  }
+
+  /**
+   * Sets campaign visibility
+   * @param {string} campaignId - The campaign ID
+   * @param {boolean} visible - Whether the campaign should be visible
+   */
+  setCampaignVisibility(campaignId, visible) {
+    const campaign = this.campaigns.get(campaignId);
+    if (campaign) {
+      campaign.visible = visible;
+      this.saveCampaignSettings();
+    }
+  }
+
+  /**
+   * Gets all campaigns
+   * @returns {Map} Map of campaign data
+   */
+  getAllCampaigns() {
+    return this.campaigns;
+  }
+
+  /**
+   * Gets visible campaigns only
+   * @returns {Array} Array of visible campaign IDs
+   */
+  getVisibleCampaigns() {
+    return Array.from(this.campaigns.entries())
+      .filter(([_, campaign]) => campaign.visible)
+      .map(([campaignId, _]) => campaignId);
+  }
+
+  /**
+   * Saves campaign settings to localStorage
+   */
+  saveCampaignSettings() {
+    const campaignData = {};
+    this.campaigns.forEach((campaign, campaignId) => {
+      campaignData[campaignId] = campaign;
+    });
+    localStorage.setItem('campaignSettings', JSON.stringify({
+      campaigns: campaignData,
+      colorIndex: this.colorIndex
+    }));
+  }
+
+  /**
+   * Loads campaign settings from localStorage
+   */
+  loadCampaignSettings() {
+    const saved = localStorage.getItem('campaignSettings');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        this.colorIndex = data.colorIndex || 0;
+        if (data.campaigns) {
+          Object.entries(data.campaigns).forEach(([campaignId, campaign]) => {
+            this.campaigns.set(campaignId, campaign);
+          });
         }
-        this.saveCampaignSettings();
+      } catch (error) {
+        console.error('Error loading campaign settings:', error);
+      }
     }
+  }
 
-    /**
-     * Removes a campaign
-     * @param {string} campaignId - The campaign ID to remove
-     */
-    removeCampaign(campaignId) {
-        this.campaigns.delete(campaignId);
-        this.saveCampaignSettings();
-    }
-
-    /**
-     * Gets campaign color
-     * @param {string} campaignId - The campaign ID
-     * @returns {string} The campaign color
-     */
-    getCampaignColor(campaignId) {
-        const campaign = this.campaigns.get(campaignId);
-        return campaign ? campaign.color : MARKER_COLORS.RED;
-    }
-
-    /**
-     * Gets campaign visibility
-     * @param {string} campaignId - The campaign ID
-     * @returns {boolean} Whether the campaign is visible
-     */
-    isCampaignVisible(campaignId) {
-        const campaign = this.campaigns.get(campaignId);
-        return campaign ? campaign.visible : true;
-    }
-
-    /**
-     * Sets campaign visibility
-     * @param {string} campaignId - The campaign ID
-     * @param {boolean} visible - Whether the campaign should be visible
-     */
-    setCampaignVisibility(campaignId, visible) {
-        const campaign = this.campaigns.get(campaignId);
-        if (campaign) {
-            campaign.visible = visible;
-            this.saveCampaignSettings();
-        }
-    }
-
-    /**
-     * Gets all campaigns
-     * @returns {Map} Map of campaign data
-     */
-    getAllCampaigns() {
-        return this.campaigns;
-    }
-
-    /**
-     * Gets visible campaigns only
-     * @returns {Array} Array of visible campaign IDs
-     */
-    getVisibleCampaigns() {
-        return Array.from(this.campaigns.entries())
-            .filter(([_, campaign]) => campaign.visible)
-            .map(([campaignId, _]) => campaignId);
-    }
-
-    /**
-     * Saves campaign settings to localStorage
-     */
-    saveCampaignSettings() {
-        const campaignData = {};
-        this.campaigns.forEach((campaign, campaignId) => {
-            campaignData[campaignId] = campaign;
-        });
-        localStorage.setItem('campaignSettings', JSON.stringify({
-            campaigns: campaignData,
-            colorIndex: this.colorIndex
-        }));
-    }
-
-    /**
-     * Loads campaign settings from localStorage
-     */
-    loadCampaignSettings() {
-        const saved = localStorage.getItem('campaignSettings');
-        if (saved) {
-            try {
-                const data = JSON.parse(saved);
-                this.colorIndex = data.colorIndex || 0;
-                if (data.campaigns) {
-                    Object.entries(data.campaigns).forEach(([campaignId, campaign]) => {
-                        this.campaigns.set(campaignId, campaign);
-                    });
-                }
-            } catch (error) {
-                console.error('Error loading campaign settings:', error);
-            }
-        }
-    }
-
-    /**
-     * Clears all campaign settings
-     */
-    clearAllCampaigns() {
-        this.campaigns.clear();
-        this.colorIndex = 0;
-        this.saveCampaignSettings();
-    }
+  /**
+   * Clears all campaign settings
+   */
+  clearAllCampaigns() {
+    this.campaigns.clear();
+    this.colorIndex = 0;
+    this.saveCampaignSettings();
+  }
 }
 
 const campaignManager = new CampaignManager();
@@ -458,118 +458,118 @@ const campaignManager = new CampaignManager();
  * Manages city filtering functionality
  */
 class CityFilterManager {
-    constructor() {
-        this.selectedCity = '';
-        this.availableCities = [];
-        this.loadFilterState();
-    }
+  constructor() {
+    this.selectedCity = '';
+    this.availableCities = [];
+    this.loadFilterState();
+  }
 
-    /**
-     * Extracts city names from marker data using the existing logic
-     * @param {Array} allMarkers - Array of all marker data
-     * @returns {Array} Array of unique city names
-     */
-    extractCities(allMarkers) {
-        const uniqueLocations = new Set();
+  /**
+   * Extracts city names from marker data using the existing logic
+   * @param {Array} allMarkers - Array of all marker data
+   * @returns {Array} Array of unique city names
+   */
+  extractCities(allMarkers) {
+    const uniqueLocations = new Set();
 
-        allMarkers.forEach(item => {
-            if (typeof item.name === 'string') {
-                const parts = item.name.split(' ');
-                if (parts.length > 1 && parts[0].toLowerCase() !== 'planned') {
-                    uniqueLocations.add(parts[1].toLowerCase());
-                }
-            }
-        });
-
-        return Array.from(uniqueLocations)
-            .filter(Boolean)
-            .map(str => str.charAt(0).toUpperCase() + str.slice(1))
-            .sort();
-    }
-
-    /**
-     * Populates the city filter dropdown
-     * @param {Array} cities - Array of city names
-     */
-    populateDropdown(cities) {
-        this.availableCities = cities;
-        const dropdown = document.getElementById('city-filter-dropdown');
-        if (!dropdown) return;
-
-        // Clear existing options except "All Cities"
-        dropdown.innerHTML = '<option value="">All Cities</option>';
-
-        // Add city options
-        cities.forEach(city => {
-            const option = document.createElement('option');
-            option.value = city.toLowerCase();
-            option.textContent = city;
-            if (city.toLowerCase() === this.selectedCity) {
-                option.selected = true;
-            }
-            dropdown.appendChild(option);
-        });
-    }
-
-    /**
-     * Sets the selected city filter
-     * @param {string} city - The city to filter by (lowercase)
-     */
-    setSelectedCity(city) {
-        this.selectedCity = city;
-        this.saveFilterState();
-    }
-
-    /**
-     * Gets the selected city filter
-     * @returns {string} The selected city (lowercase)
-     */
-    getSelectedCity() {
-        return this.selectedCity;
-    }
-
-    /**
-     * Checks if a marker should be visible based on city filter
-     * @param {string} markerName - The marker name to check
-     * @returns {boolean} Whether the marker should be visible
-     */
-    shouldShowMarker(markerName) {
-        if (!this.selectedCity || !markerName) return true;
-
-        const parts = markerName.split(' ');
-        if (parts.length > 1) {
-            const markerCity = parts[1].toLowerCase();
-            return markerCity === this.selectedCity;
+    allMarkers.forEach(item => {
+      if (typeof item.name === 'string') {
+        const parts = item.name.split(' ');
+        if (parts.length > 1 && parts[0].toLowerCase() !== 'planned') {
+          uniqueLocations.add(parts[1].toLowerCase());
         }
-        return false;
-    }
+      }
+    });
 
-    /**
-     * Saves filter state to localStorage
-     */
-    saveFilterState() {
-        localStorage.setItem('cityFilter', this.selectedCity);
-    }
+    return Array.from(uniqueLocations)
+      .filter(Boolean)
+      .map(str => str.charAt(0).toUpperCase() + str.slice(1))
+      .sort();
+  }
 
-    /**
-     * Loads filter state from localStorage
-     */
-    loadFilterState() {
-        const saved = localStorage.getItem('cityFilter');
-        this.selectedCity = saved || '';
-    }
+  /**
+   * Populates the city filter dropdown
+   * @param {Array} cities - Array of city names
+   */
+  populateDropdown(cities) {
+    this.availableCities = cities;
+    const dropdown = document.getElementById('city-filter-dropdown');
+    if (!dropdown) return;
 
-    /**
-     * Clears the city filter
-     */
-    clearFilter() {
-        this.selectedCity = '';
-        this.saveFilterState();
-        const dropdown = document.getElementById('city-filter-dropdown');
-        if (dropdown) {
-            dropdown.value = '';
-        }
+    // Clear existing options except "All Cities"
+    dropdown.innerHTML = '<option value="">All Cities</option>';
+
+    // Add city options
+    cities.forEach(city => {
+      const option = document.createElement('option');
+      option.value = city.toLowerCase();
+      option.textContent = city;
+      if (city.toLowerCase() === this.selectedCity) {
+        option.selected = true;
+      }
+      dropdown.appendChild(option);
+    });
+  }
+
+  /**
+   * Sets the selected city filter
+   * @param {string} city - The city to filter by (lowercase)
+   */
+  setSelectedCity(city) {
+    this.selectedCity = city;
+    this.saveFilterState();
+  }
+
+  /**
+   * Gets the selected city filter
+   * @returns {string} The selected city (lowercase)
+   */
+  getSelectedCity() {
+    return this.selectedCity;
+  }
+
+  /**
+   * Checks if a marker should be visible based on city filter
+   * @param {string} markerName - The marker name to check
+   * @returns {boolean} Whether the marker should be visible
+   */
+  shouldShowMarker(markerName) {
+    if (!this.selectedCity || !markerName) return true;
+
+    const parts = markerName.split(' ');
+    if (parts.length > 1) {
+      const markerCity = parts[1].toLowerCase();
+      return markerCity === this.selectedCity;
     }
+    return false;
+  }
+
+  /**
+   * Saves filter state to localStorage
+   */
+  saveFilterState() {
+    localStorage.setItem('cityFilter', this.selectedCity);
+  }
+
+  /**
+   * Loads filter state from localStorage
+   */
+  loadFilterState() {
+    const saved = localStorage.getItem('cityFilter');
+    this.selectedCity = saved || '';
+  }
+
+  /**
+   * Clears the city filter
+   */
+  clearFilter() {
+    this.selectedCity = '';
+    this.saveFilterState();
+    const dropdown = document.getElementById('city-filter-dropdown');
+    if (dropdown) {
+      dropdown.value = '';
+    }
+  }
 }
 
 const cityFilterManager = new CityFilterManager();
@@ -578,61 +578,61 @@ const cityFilterManager = new CityFilterManager();
  * Manages saving and loading user preferences (map view and filters) to/from localStorage.
  */
 class UserPreferencesManager {
-    /**
-     * Initializes the keys used for storing data in localStorage.
-     */
-    constructor() {
-        this.mapViewKey = 'mapViewState';
-        this.filtersKey = 'filterToggleState';
-    }
+  /**
+   * Initializes the keys used for storing data in localStorage.
+   */
+  constructor() {
+    this.mapViewKey = 'mapViewState';
+    this.filtersKey = 'filterToggleState';
+  }
 
-    /**
-     * Saves the current map center and zoom level to localStorage.
-     * @param {L.Map} map The Leaflet map instance.
-     */
-    saveMapState(map) {
-        const mapState = {
-            zoom: map.getZoom(),
-            center: map.getCenter()
-        };
-        localStorage.setItem(this.mapViewKey, JSON.stringify(mapState));
-    }
+  /**
+   * Saves the current map center and zoom level to localStorage.
+   * @param {L.Map} map The Leaflet map instance.
+   */
+  saveMapState(map) {
+    const mapState = {
+      zoom: map.getZoom(),
+      center: map.getCenter()
+    };
+    localStorage.setItem(this.mapViewKey, JSON.stringify(mapState));
+  }
 
-    /**
-     * Loads the saved map state from localStorage.
-     * @returns {Object|null} The saved map state {zoom, center} or null if not found.
-     */
-    loadMapState() {
-        const savedState = localStorage.getItem(this.mapViewKey);
-        return savedState ? JSON.parse(savedState) : null;
-    }
+  /**
+   * Loads the saved map state from localStorage.
+   * @returns {Object|null} The saved map state {zoom, center} or null if not found.
+   */
+  loadMapState() {
+    const savedState = localStorage.getItem(this.mapViewKey);
+    return savedState ? JSON.parse(savedState) : null;
+  }
 
-    /**
-     * Saves the current state of UI filters (toggles, clustering) to localStorage.
-     */
-    saveFilterState() {
-        const greyToggle = document.getElementById('grey-markers-toggle');
-        const clusteringToggle = document.getElementById('clustering-toggle');
-        const filterState = {
-            showAll: greyToggle ? greyToggle.checked : false,
-            clusteringEnabled: clusteringToggle ? clusteringToggle.checked : true,
-            clusterRadius: clusterRadius, // Save current cluster radius value
-        };
-        localStorage.setItem(this.filtersKey, JSON.stringify(filterState));
-    }
+  /**
+   * Saves the current state of UI filters (toggles, clustering) to localStorage.
+   */
+  saveFilterState() {
+    const greyToggle = document.getElementById('grey-markers-toggle');
+    const clusteringToggle = document.getElementById('clustering-toggle');
+    const filterState = {
+      showAll: greyToggle ? greyToggle.checked : false,
+      clusteringEnabled: clusteringToggle ? clusteringToggle.checked : true,
+      clusterRadius: clusterRadius, // Save current cluster radius value
+    };
+    localStorage.setItem(this.filtersKey, JSON.stringify(filterState));
+  }
 
-    /**
-     * Loads the saved filter state from localStorage.
-     * @returns {Object} The saved filter state or a default state.
-     */
-    loadFilterState() {
-        const savedState = localStorage.getItem(this.filtersKey);
-        return savedState ? JSON.parse(savedState) : {
-            showAll: false,
-            clusteringEnabled: false,
-            clusterRadius: 70
-        };
-    }
+  /**
+   * Loads the saved filter state from localStorage.
+   * @returns {Object} The saved filter state or a default state.
+   */
+  loadFilterState() {
+    const savedState = localStorage.getItem(this.filtersKey);
+    return savedState ? JSON.parse(savedState) : {
+      showAll: false,
+      clusteringEnabled: false,
+      clusterRadius: 70
+    };
+  }
 }
 const prefsManager = new UserPreferencesManager();
 
@@ -677,11 +677,11 @@ async function processCampaignData(odooUrl) {
 
     // Process and add new campaign data
     const campaignMarkers = [];
-    
+
     poleData.forEach(marker => {
       // Extract dates for this specific marker using pole_line_no as the identifier
       const dates = OdooHtmlParser.extractCampaignDates(html, marker.id);
-      
+
       campaignMarkers.push({
         campaignId: campaignId,
         campaignOrder: campaignOrder,
@@ -700,7 +700,7 @@ async function processCampaignData(odooUrl) {
     // Process base markers from all-poles-data if available
     if (allPolesData && allPolesData.length > 0) {
       const existingMarkerCount = await db.allMarkers.count();
-      
+
       // Only add base markers if they don't exist yet
       if (existingMarkerCount === 0) {
         const baseMarkers = allPolesData.map(marker => ({
@@ -709,7 +709,7 @@ async function processCampaignData(odooUrl) {
           lat: marker.lat,
           lng: marker.lng
         }));
-        
+
         await db.allMarkers.bulkAdd(baseMarkers);
         console.log(`Base markers added to IndexedDB (${baseMarkers.length} markers)`);
       }
@@ -743,7 +743,7 @@ async function processCampaignData(odooUrl) {
 async function processGoogleData(googleUrl) {
   try {
     const data = await GoogleDataParser.fetchAndMergeData(googleUrl);
-    
+
     if (!data || !data.campaigns || data.campaigns.length === 0) {
       alert('No campaign data found in the provided JSON');
       return;
@@ -762,22 +762,22 @@ async function processGoogleData(googleUrl) {
 
     // Process each distinct campaign found in the JSON
     for (const campaign of campaigns) {
-        const { campaignId, campaignName, campaignMarkers } = campaign;
+      const { campaignId, campaignName, campaignMarkers } = campaign;
 
-        const existingMarkers = await dataManager.getCampaignMarkers(campaignId);
-        if (existingMarkers.length > 0) {
-          const confirmed = confirm(`Campaign "${campaignName}" already exists in the database.\nOverwrite?`);
-          if (!confirmed) continue; // Skip to next campaign if they decline
-        }
+      const existingMarkers = await dataManager.getCampaignMarkers(campaignId);
+      if (existingMarkers.length > 0) {
+        const confirmed = confirm(`Campaign "${campaignName}" already exists in the database.\nOverwrite?`);
+        if (!confirmed) continue; // Skip to next campaign if they decline
+      }
 
-        await dataManager.clearCampaignData(campaignId);
+      await dataManager.clearCampaignData(campaignId);
 
-        if (campaignMarkers.length > 0) {
-          await db.markersCampaigns.bulkAdd(campaignMarkers);
-          console.log(`Campaign data for ${campaignId} added to IndexedDB (${campaignMarkers.length} markers)`);
-          
-          campaignManager.addCampaign(campaignId, campaignName);
-        }
+      if (campaignMarkers.length > 0) {
+        await db.markersCampaigns.bulkAdd(campaignMarkers);
+        console.log(`Campaign data for ${campaignId} added to IndexedDB (${campaignMarkers.length} markers)`);
+
+        campaignManager.addCampaign(campaignId, campaignName);
+      }
     }
 
     updateCampaignUI();
@@ -813,28 +813,28 @@ async function loadCampaignData(event) {
 
   let extractedCampaignId = null;
   if (isOdoo) {
-      // Extract campaign ID from URL
-      extractedCampaignId = OdooHtmlParser.extractCampaignIdFromUrl(inputUrl);
-      if (!extractedCampaignId) {
-        alert('Could not extract campaign ID from URL. Please check the URL format.');
-        return;
-      }
+    // Extract campaign ID from URL
+    extractedCampaignId = OdooHtmlParser.extractCampaignIdFromUrl(inputUrl);
+    if (!extractedCampaignId) {
+      alert('Could not extract campaign ID from URL. Please check the URL format.');
+      return;
+    }
   }
 
   // If it's a google URL, we might not have a campaignId before fetching, so we'll check existence inside the generic flow or after fetch.
   if (extractedCampaignId) {
-      // Check if campaign already exists in IndexedDB
-      const existingMarkers = await dataManager.getCampaignMarkers(extractedCampaignId);
-      if (existingMarkers.length > 0) {
-        const campaignName = existingMarkers[0].campaignName || 'Campaign';
-        const confirmed = confirm(
-          `Campaign "${campaignName}" already exists in the database.\n` +
-          'Do you want to overwrite the existing data for this campaign?'
-        );
-        if (!confirmed) {
-          return;
-        }
+    // Check if campaign already exists in IndexedDB
+    const existingMarkers = await dataManager.getCampaignMarkers(extractedCampaignId);
+    if (existingMarkers.length > 0) {
+      const campaignName = existingMarkers[0].campaignName || 'Campaign';
+      const confirmed = confirm(
+        `Campaign "${campaignName}" already exists in the database.\n` +
+        'Do you want to overwrite the existing data for this campaign?'
+      );
+      if (!confirmed) {
+        return;
       }
+    }
   }
 
   // Show loading state
@@ -851,6 +851,9 @@ async function loadCampaignData(event) {
       await processCampaignData(inputUrl);
     } else {
       await processGoogleData(inputUrl);
+      // Store the Google URL for refetching later
+      localStorage.setItem('googleDataUrl', inputUrl);
+      updateRefetchButtonState();
     }
 
     // UPDATE THE CITY DROPDOWN LIST WITH NEW LOCATIONS
@@ -872,13 +875,13 @@ async function loadCampaignData(event) {
 // Map Initialization
 const savedMapState = prefsManager.loadMapState();
 var map = L.map('map').setView(
-    savedMapState ? savedMapState.center : [62.160871, 25.6416672],
-    savedMapState ? savedMapState.zoom : 8
+  savedMapState ? savedMapState.center : [62.160871, 25.6416672],
+  savedMapState ? savedMapState.zoom : 8
 );
 
 // Saves map state whenever the user stops moving or zooming the map.
 map.on('moveend zoomend', () => {
-    prefsManager.saveMapState(map);
+  prefsManager.saveMapState(map);
 });
 
 // Adds the OpenStreetMap tile layer to the map.
@@ -893,18 +896,18 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
  * @param {number} locationId - The ID of the location whose popup should be opened.
  */
 function reopenPopup(locationId) {
-    if (!markersLayer) return;
+  if (!markersLayer) return;
 
-    // Use getLayers() to access all markers, even those inside clusters
-    const allMarkers = markersLayer.getLayers();
-    const targetMarker = allMarkers.find(m => m.locationId === locationId);
+  // Use getLayers() to access all markers, even those inside clusters
+  const allMarkers = markersLayer.getLayers();
+  const targetMarker = allMarkers.find(m => m.locationId === locationId);
 
-    if (targetMarker) {
-        // This function will zoom to the cluster and execute the callback
-        markersLayer.zoomToShowLayer(targetMarker, function() {
-            targetMarker.openPopup();
-        });
-    }
+  if (targetMarker) {
+    // This function will zoom to the cluster and execute the callback
+    markersLayer.zoomToShowLayer(targetMarker, function () {
+      targetMarker.openPopup();
+    });
+  }
 }
 
 /**
@@ -986,7 +989,7 @@ function getAdvertisementType(name) {
   if (typeof name !== 'string') return 'default';
 
   const lowerName = name.toLowerCase();
-  
+
   // Check more specific types FIRST
   if (lowerName.includes(' classic tupla')) {
     return 'classic_tupla';
@@ -1202,14 +1205,14 @@ function updateClusterRadius(value) {
  * @returns {string} The formatted date string, or an empty string if input is invalid.
  */
 function formatTimestamp(isoString) {
-    if (!isoString) return '';
-    const date = new Date(isoString);
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${day}-${month}-${year} ${hours}:${minutes}`;
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${day}-${month}-${year} ${hours}:${minutes}`;
 }
 
 /**
@@ -1219,36 +1222,36 @@ function formatTimestamp(isoString) {
  * @returns {string} The HTML string for the popup.
  */
 function createPopupContent(placeData, isCampaign) {
-    const checkboxId = `status-${placeData.markerId || placeData.id}`;
-    const currentStatus = placeData.markerVisited || false;
-    const isChecked = currentStatus ? 'checked' : '';
+  const checkboxId = `status-${placeData.markerId || placeData.id}`;
+  const currentStatus = placeData.markerVisited || false;
+  const isChecked = currentStatus ? 'checked' : '';
 
-    let campaignInfoHtml = '';
-    if (isCampaign) {
-        let visitedHtml = '';
-        if (placeData.markerDateVisited) {
-            visitedHtml = `<div class="popup-info"><i class="fas fa-check-circle"></i>Visited on: ${formatTimestamp(placeData.markerDateVisited)}</div>`;
-        }
-        
-        let statusHtml = '';
-        if (placeData.status) {
-            statusHtml = `<div class="popup-info"><i class="fas fa-info-circle"></i>Status: <strong>${placeData.status}</strong></div>`;
-        }
+  let campaignInfoHtml = '';
+  if (isCampaign) {
+    let visitedHtml = '';
+    if (placeData.markerDateVisited) {
+      visitedHtml = `<div class="popup-info"><i class="fas fa-check-circle"></i>Visited on: ${formatTimestamp(placeData.markerDateVisited)}</div>`;
+    }
 
-        campaignInfoHtml = `
+    let statusHtml = '';
+    if (placeData.status) {
+      statusHtml = `<div class="popup-info"><i class="fas fa-info-circle"></i>Status: <strong>${placeData.status}</strong></div>`;
+    }
+
+    campaignInfoHtml = `
             ${statusHtml}
             ${visitedHtml}
             <div class="popup-info"><i class="fas fa-building"></i>Campaign: ${placeData.campaignName}</div>
             <div class="popup-info"><i class="fas fa-calendar-alt"></i>Start Date: ${formatDate(placeData.campaignStartDate)}</div>
             <div class="popup-info"><i class="fas fa-calendar-alt"></i>End Date: ${formatDate(placeData.campaignEndDate)}</div>
         `;
-    }
+  }
 
-    const markerName = placeData.markerName || placeData.name;
-    const markerId = placeData.markerId || placeData.id;
-    const campaignId = placeData.campaignId || '';
+  const markerName = placeData.markerName || placeData.name;
+  const markerId = placeData.markerId || placeData.id;
+  const campaignId = placeData.campaignId || '';
 
-    return `
+  return `
         <div class="popup-content">
             <h3>${markerName}</h3>
             ${campaignInfoHtml}
@@ -1272,162 +1275,162 @@ function createPopupContent(placeData, isCampaign) {
  * - If for markerID active several campaigns - show all of them
  */
 async function renderMapMarkers() {
-    // Remove old layer and create a new one with the current cluster radius
-    if (markersLayer) map.removeLayer(markersLayer);
-    markersLayer = L.markerClusterGroup({
-        maxClusterRadius: clusterRadius,
-        spiderfyOnMaxZoom: true,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: true
-    });
+  // Remove old layer and create a new one with the current cluster radius
+  if (markersLayer) map.removeLayer(markersLayer);
+  markersLayer = L.markerClusterGroup({
+    maxClusterRadius: clusterRadius,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: true
+  });
 
-    const showGreyMarkers = document.getElementById('grey-markers-toggle').checked;
-    const showCampaignMarkers = campaignManager.getVisibleCampaigns().length > 0;
+  const showGreyMarkers = document.getElementById('grey-markers-toggle').checked;
+  const showCampaignMarkers = campaignManager.getVisibleCampaigns().length > 0;
 
-    try {
-        // Get all data from IndexedDB
-        const [allBaseLocations, allCampaignLocations] = await Promise.all([
-            db.allMarkers.toArray(),
-            db.markersCampaigns.toArray()
-        ]);
+  try {
+    // Get all data from IndexedDB
+    const [allBaseLocations, allCampaignLocations] = await Promise.all([
+      db.allMarkers.toArray(),
+      db.markersCampaigns.toArray()
+    ]);
 
-        // Create a set of marker IDs that have campaign data
-        const campaignMarkerIds = new Set();
-        if (showCampaignMarkers && allCampaignLocations.length > 0) {
-            allCampaignLocations.forEach(campaign => {
-                campaignMarkerIds.add(campaign.markerId);
-            });
-        }
-
-        // Add grey markers (only if they don't have campaign data when campaign markers are shown)
-        if (showGreyMarkers && allBaseLocations.length > 0) {
-            allBaseLocations.forEach(place => {
-                // Skip grey markers if campaign markers are shown and this marker has campaign data
-                if (showCampaignMarkers && campaignMarkerIds.has(place.id)) {
-                    return;
-                }
-
-                // Apply city filter
-                if (!cityFilterManager.shouldShowMarker(place.name)) {
-                    return;
-                }
-
-                const advertisementType = getAdvertisementType(place.name);
-                const icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
-                const popupContent = createPopupContent(place, false);
-                const marker = L.marker([place.lat, place.lng], { icon });
-                marker.locationId = place.id;
-                marker.bindPopup(popupContent);
-                markersLayer.addLayer(marker);
-            });
-        }
-
-        // Add campaign markers with different colors per campaign
-        if (showCampaignMarkers && allCampaignLocations.length > 0) {
-            // Filter campaign locations to only show visible campaigns
-            const visibleCampaignIds = campaignManager.getVisibleCampaigns();
-            const visibleCampaignLocations = allCampaignLocations.filter(place =>
-                visibleCampaignIds.includes(place.campaignId)
-            );
-
-            visibleCampaignLocations.forEach(place => {
-                // Apply city filter
-                if (!cityFilterManager.shouldShowMarker(place.markerName)) {
-                    return;
-                }
-
-                const advertisementType = getAdvertisementType(place.markerName);
-                // Use visited color if marker is visited, otherwise use campaign color
-                const campaignColor = campaignManager.getCampaignColor(place.campaignId);
-                const markerColor = place.markerVisited ? MARKER_COLORS.GREEN : campaignColor;
-                const icon = getMarkerIcon(advertisementType, markerColor);
-                const popupContent = createPopupContent(place, true);
-                const marker = L.marker([place.markerLat, place.markerLng], { icon });
-                marker.locationId = place.markerId;
-                marker.campaignId = place.campaignId;
-                marker.bindPopup(popupContent);
-                markersLayer.addLayer(marker);
-            });
-        }
-
-        // Add the layer to the map
-        map.addLayer(markersLayer);
-
-    } catch (error) {
-        console.error('Error loading markers from IndexedDB:', error);
-        // Add empty layer to prevent errors
-        map.addLayer(markersLayer);
+    // Create a set of marker IDs that have campaign data
+    const campaignMarkerIds = new Set();
+    if (showCampaignMarkers && allCampaignLocations.length > 0) {
+      allCampaignLocations.forEach(campaign => {
+        campaignMarkerIds.add(campaign.markerId);
+      });
     }
+
+    // Add grey markers (only if they don't have campaign data when campaign markers are shown)
+    if (showGreyMarkers && allBaseLocations.length > 0) {
+      allBaseLocations.forEach(place => {
+        // Skip grey markers if campaign markers are shown and this marker has campaign data
+        if (showCampaignMarkers && campaignMarkerIds.has(place.id)) {
+          return;
+        }
+
+        // Apply city filter
+        if (!cityFilterManager.shouldShowMarker(place.name)) {
+          return;
+        }
+
+        const advertisementType = getAdvertisementType(place.name);
+        const icon = getMarkerIcon(advertisementType, MARKER_COLORS.GREY);
+        const popupContent = createPopupContent(place, false);
+        const marker = L.marker([place.lat, place.lng], { icon });
+        marker.locationId = place.id;
+        marker.bindPopup(popupContent);
+        markersLayer.addLayer(marker);
+      });
+    }
+
+    // Add campaign markers with different colors per campaign
+    if (showCampaignMarkers && allCampaignLocations.length > 0) {
+      // Filter campaign locations to only show visible campaigns
+      const visibleCampaignIds = campaignManager.getVisibleCampaigns();
+      const visibleCampaignLocations = allCampaignLocations.filter(place =>
+        visibleCampaignIds.includes(place.campaignId)
+      );
+
+      visibleCampaignLocations.forEach(place => {
+        // Apply city filter
+        if (!cityFilterManager.shouldShowMarker(place.markerName)) {
+          return;
+        }
+
+        const advertisementType = getAdvertisementType(place.markerName);
+        // Use visited color if marker is visited, otherwise use campaign color
+        const campaignColor = campaignManager.getCampaignColor(place.campaignId);
+        const markerColor = place.markerVisited ? MARKER_COLORS.GREEN : campaignColor;
+        const icon = getMarkerIcon(advertisementType, markerColor);
+        const popupContent = createPopupContent(place, true);
+        const marker = L.marker([place.markerLat, place.markerLng], { icon });
+        marker.locationId = place.markerId;
+        marker.campaignId = place.campaignId;
+        marker.bindPopup(popupContent);
+        markersLayer.addLayer(marker);
+      });
+    }
+
+    // Add the layer to the map
+    map.addLayer(markersLayer);
+
+  } catch (error) {
+    console.error('Error loading markers from IndexedDB:', error);
+    // Add empty layer to prevent errors
+    map.addLayer(markersLayer);
+  }
 }
 
 /**
  * Updates the statistics display based on visible campaigns only
  */
 async function updateStatistics() {
-    try {
-        const showGreyMarkers = document.getElementById('grey-markers-toggle').checked;
-        const showCampaignMarkers = campaignManager.getVisibleCampaigns().length > 0;
+  try {
+    const showGreyMarkers = document.getElementById('grey-markers-toggle').checked;
+    const showCampaignMarkers = campaignManager.getVisibleCampaigns().length > 0;
 
-        let totalCount = 0;
-        let visitedCount = 0;
-        let notVisitedCount = 0;
+    let totalCount = 0;
+    let visitedCount = 0;
+    let notVisitedCount = 0;
 
-        // Count grey markers if they're visible and no campaigns are visible
-        if (showGreyMarkers) {
-            const allBaseLocations = await db.allMarkers.toArray();
-            const visibleCampaignIds = campaignManager.getVisibleCampaigns();
+    // Count grey markers if they're visible and no campaigns are visible
+    if (showGreyMarkers) {
+      const allBaseLocations = await db.allMarkers.toArray();
+      const visibleCampaignIds = campaignManager.getVisibleCampaigns();
 
-            if (!showCampaignMarkers || visibleCampaignIds.length === 0) {
-                // Show all grey markers (filtered by city)
-                const filteredGreyMarkers = allBaseLocations.filter(marker =>
-                    cityFilterManager.shouldShowMarker(marker.name)
-                );
-                totalCount += filteredGreyMarkers.length;
-                notVisitedCount += filteredGreyMarkers.length;
-            } else {
-                // Show only grey markers that don't have campaign data (filtered by city)
-                const allCampaignLocations = await db.markersCampaigns.toArray();
-                const campaignMarkerIds = new Set(allCampaignLocations.map(c => c.markerId));
+      if (!showCampaignMarkers || visibleCampaignIds.length === 0) {
+        // Show all grey markers (filtered by city)
+        const filteredGreyMarkers = allBaseLocations.filter(marker =>
+          cityFilterManager.shouldShowMarker(marker.name)
+        );
+        totalCount += filteredGreyMarkers.length;
+        notVisitedCount += filteredGreyMarkers.length;
+      } else {
+        // Show only grey markers that don't have campaign data (filtered by city)
+        const allCampaignLocations = await db.markersCampaigns.toArray();
+        const campaignMarkerIds = new Set(allCampaignLocations.map(c => c.markerId));
 
-                const greyOnlyMarkers = allBaseLocations.filter(marker =>
-                    !campaignMarkerIds.has(marker.id) &&
-                    cityFilterManager.shouldShowMarker(marker.name)
-                );
-                totalCount += greyOnlyMarkers.length;
-                notVisitedCount += greyOnlyMarkers.length;
-            }
-        }
-
-        // Count campaign markers if they're visible
-        if (showCampaignMarkers) {
-            const visibleCampaignIds = campaignManager.getVisibleCampaigns();
-            if (visibleCampaignIds.length > 0) {
-                const allCampaignLocations = await db.markersCampaigns.toArray();
-                const visibleCampaignMarkers = allCampaignLocations.filter(marker =>
-                    visibleCampaignIds.includes(marker.campaignId) &&
-                    cityFilterManager.shouldShowMarker(marker.markerName)
-                );
-
-                totalCount += visibleCampaignMarkers.length;
-                const campaignVisited = visibleCampaignMarkers.filter(m => m.markerVisited).length;
-                visitedCount += campaignVisited;
-                notVisitedCount += (visibleCampaignMarkers.length - campaignVisited);
-            }
-        }
-
-        // Update UI elements
-        document.getElementById('total-count').textContent = totalCount;
-        document.getElementById('visited-count').textContent = visitedCount;
-        document.getElementById('not-visited-count').textContent = notVisitedCount;
-
-        // Update progress bar
-        const progressPercent = totalCount > 0 ? Math.round((visitedCount / totalCount) * 100) : 0;
-        document.getElementById('progress-percent').textContent = `${progressPercent}%`;
-        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
-
-    } catch (error) {
-        console.error('Error updating statistics:', error);
+        const greyOnlyMarkers = allBaseLocations.filter(marker =>
+          !campaignMarkerIds.has(marker.id) &&
+          cityFilterManager.shouldShowMarker(marker.name)
+        );
+        totalCount += greyOnlyMarkers.length;
+        notVisitedCount += greyOnlyMarkers.length;
+      }
     }
+
+    // Count campaign markers if they're visible
+    if (showCampaignMarkers) {
+      const visibleCampaignIds = campaignManager.getVisibleCampaigns();
+      if (visibleCampaignIds.length > 0) {
+        const allCampaignLocations = await db.markersCampaigns.toArray();
+        const visibleCampaignMarkers = allCampaignLocations.filter(marker =>
+          visibleCampaignIds.includes(marker.campaignId) &&
+          cityFilterManager.shouldShowMarker(marker.markerName)
+        );
+
+        totalCount += visibleCampaignMarkers.length;
+        const campaignVisited = visibleCampaignMarkers.filter(m => m.markerVisited).length;
+        visitedCount += campaignVisited;
+        notVisitedCount += (visibleCampaignMarkers.length - campaignVisited);
+      }
+    }
+
+    // Update UI elements
+    document.getElementById('total-count').textContent = totalCount;
+    document.getElementById('visited-count').textContent = visitedCount;
+    document.getElementById('not-visited-count').textContent = notVisitedCount;
+
+    // Update progress bar
+    const progressPercent = totalCount > 0 ? Math.round((visitedCount / totalCount) * 100) : 0;
+    document.getElementById('progress-percent').textContent = `${progressPercent}%`;
+    document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+  } catch (error) {
+    console.error('Error updating statistics:', error);
+  }
 }
 
 /**
@@ -1435,22 +1438,22 @@ async function updateStatistics() {
  * @param {string} cityValue - The selected city value from dropdown
  */
 function applyCityFilter(cityValue) {
-    cityFilterManager.setSelectedCity(cityValue);
-    renderMapMarkers();
-    updateStatistics();
+  cityFilterManager.setSelectedCity(cityValue);
+  renderMapMarkers();
+  updateStatistics();
 }
 
 /**
  * Initializes the city filter dropdown with available cities
  */
 async function initializeCityFilter() {
-    try {
-        const allMarkers = await db.allMarkers.toArray();
-        const cities = cityFilterManager.extractCities(allMarkers);
-        cityFilterManager.populateDropdown(cities);
-    } catch (error) {
-        console.error('Error initializing city filter:', error);
-    }
+  try {
+    const allMarkers = await db.allMarkers.toArray();
+    const cities = cityFilterManager.extractCities(allMarkers);
+    cityFilterManager.populateDropdown(cities);
+  } catch (error) {
+    console.error('Error initializing city filter:', error);
+  }
 }
 
 /**
@@ -1458,9 +1461,9 @@ async function initializeCityFilter() {
  * Used as an onchange handler for filter toggles.
  */
 function saveStateAndRender() {
-    prefsManager.saveFilterState();
-    renderMapMarkers();
-    updateStatistics();
+  prefsManager.saveFilterState();
+  renderMapMarkers();
+  updateStatistics();
 }
 
 /**
@@ -1477,11 +1480,11 @@ function updateCampaignUI() {
     return;
   }
 
-    if (campaigns.size > 0) {
-      const progressStatsContainer = document.getElementById('progress-stats-container');
-      if (progressStatsContainer) {
-        progressStatsContainer.style.display = 'block';
-      }
+  if (campaigns.size > 0) {
+    const progressStatsContainer = document.getElementById('progress-stats-container');
+    if (progressStatsContainer) {
+      progressStatsContainer.style.display = 'block';
+    }
   }
 
   let campaignHTML = '<div class="campaigns-container">';
@@ -1648,7 +1651,7 @@ function toggleMinimize() {
   const container = document.getElementById('container');
   const content = document.getElementById('tracker-content');
   const minimizeBtn = document.getElementById('minimize-btn');
-  
+
   // The class 'container-minimized' is used by CSS to control layout and visibility
   if (container.classList.contains('container-minimized')) {
     container.classList.remove('container-minimized');
@@ -1688,73 +1691,73 @@ function showScreen(screenName) {
  * Attempts to get the user's current physical location using the browser's Geolocation API.
  */
 function locateUser() {
-    if (!navigator.geolocation) {
-        alert("Geolocation is not supported by your browser.");
-        return;
+  if (!navigator.geolocation) {
+    alert("Geolocation is not supported by your browser.");
+    return;
+  }
+
+  // Success callback function
+  function success(position) {
+    const lat = position.coords.latitude;
+    const lng = position.coords.longitude;
+    const userLatLng = L.latLng(lat, lng);
+
+    // Add or update the user's location marker on the map
+    if (userLocationMarker) {
+      userLocationMarker.setLatLng(userLatLng);
+    } else {
+      // Create a unique marker for the user's location (e.g., a blue circle)
+      userLocationMarker = L.circleMarker(userLatLng, {
+        radius: 8,
+        color: '#1d6ef7',
+        fillColor: '#1d6ef7',
+        fillOpacity: 0.5
+      }).addTo(map);
     }
 
-    // Success callback function
-    function success(position) {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        const userLatLng = L.latLng(lat, lng);
+    userLocationMarker.bindPopup("<b>You are here</b>").openPopup();
 
-        // Add or update the user's location marker on the map
-        if (userLocationMarker) {
-            userLocationMarker.setLatLng(userLatLng);
-        } else {
-            // Create a unique marker for the user's location (e.g., a blue circle)
-            userLocationMarker = L.circleMarker(userLatLng, {
-                radius: 8,
-                color: '#1d6ef7',
-                fillColor: '#1d6ef7',
-                fillOpacity: 0.5
-            }).addTo(map);
-        }
-        
-        userLocationMarker.bindPopup("<b>You are here</b>").openPopup();
+    // Center the map on the user's location with a suitable zoom level
+    map.setView(userLatLng, 20);
+  }
 
-        // Center the map on the user's location with a suitable zoom level
-        map.setView(userLatLng, 20);
+  // Error callback function
+  function error(err) {
+    let message = "Could not get your location. ";
+    switch (err.code) {
+      case err.PERMISSION_DENIED:
+        message += "You denied the request for Geolocation.";
+        break;
+      case err.POSITION_UNAVAILABLE:
+        message += "Location information is unavailable.";
+        break;
+      case err.TIMEOUT:
+        message += "The request to get user location timed out.";
+        break;
+      default:
+        message += "An unknown error occurred.";
+        break;
     }
+    alert(message);
+  }
 
-    // Error callback function
-    function error(err) {
-        let message = "Could not get your location. ";
-        switch (err.code) {
-            case err.PERMISSION_DENIED:
-                message += "You denied the request for Geolocation.";
-                break;
-            case err.POSITION_UNAVAILABLE:
-                message += "Location information is unavailable.";
-                break;
-            case err.TIMEOUT:
-                message += "The request to get user location timed out.";
-                break;
-            default:
-                message += "An unknown error occurred.";
-                break;
-        }
-        alert(message);
-    }
-
-    // Request the user's location
-    navigator.geolocation.getCurrentPosition(success, error);
+  // Request the user's location
+  navigator.geolocation.getCurrentPosition(success, error);
 }
 
 // For testing purposes: Fetch data from Google Sheets API and log it to the console
 function getGoogleSheetData() {
-    const apiUrl = 'https://script.google.com/macros/s/AKfycbwsbrF8r7gW0Pt44YD8dmLqzg0Dsu_y2584ORxoATu7c9lm7w03fq8vk14hwNcbtXOw/exec';
+  const apiUrl = 'https://script.google.com/macros/s/AKfycbwsbrF8r7gW0Pt44YD8dmLqzg0Dsu_y2584ORxoATu7c9lm7w03fq8vk14hwNcbtXOw/exec';
 
-    fetch(apiUrl)
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-      })
-      .then(data => {
-        console.log(data);
-      })
-      .catch(error => console.error('Error fetching data:', error));
+  fetch(apiUrl)
+    .then(response => {
+      if (!response.ok) throw new Error('Network response was not ok');
+      return response.json();
+    })
+    .then(data => {
+      console.log(data);
+    })
+    .catch(error => console.error('Error fetching data:', error));
 }
 
 /**
@@ -1763,6 +1766,7 @@ function getGoogleSheetData() {
  */
 async function initializeApp() {
   getGoogleSheetData();
+  updateRefetchButtonState();
   const savedFilters = prefsManager.loadFilterState();
   document.getElementById('grey-markers-toggle').checked = savedFilters.showAll;
 
@@ -1807,7 +1811,7 @@ async function initializeApp() {
       console.log('No data in IndexedDB. Please load a campaign using the URL input.');
       const campaignInfoElement = document.getElementById('campaign-info');
       if (campaignInfoElement) campaignInfoElement.style.display = 'none';
-      
+
       // Initialize empty map
       renderMapMarkers();
     }
@@ -1922,6 +1926,60 @@ async function importData(event) {
   event.target.value = '';
 }
 
+/**
+ * Updates the Refetch Google Data button state based on whether a Google URL is stored
+ */
+function updateRefetchButtonState() {
+  const refetchBtn = document.getElementById('refetch-google-btn');
+  if (!refetchBtn) return;
+
+  const savedUrl = localStorage.getItem('googleDataUrl');
+  if (savedUrl) {
+    refetchBtn.disabled = false;
+    refetchBtn.title = 'Refetch data from saved Google source';
+  } else {
+    refetchBtn.disabled = true;
+    refetchBtn.title = 'No Google data source available';
+  }
+}
+
+/**
+ * Refetches campaign data from the stored Google URL
+ */
+async function refetchGoogleData() {
+  const savedUrl = localStorage.getItem('googleDataUrl');
+  if (!savedUrl) {
+    alert('No Google data source URL saved. Please load data from a Google URL first.');
+    return;
+  }
+
+  const confirmed = confirm('Are you sure you want to refetch Google data? All campaign data for Google URL will be replaced.');
+  if (!confirmed) {
+    return;
+  }
+
+  const refetchBtn = document.getElementById('refetch-google-btn');
+  const originalHTML = refetchBtn.innerHTML;
+  refetchBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="spin-icon"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Refetching...';
+  refetchBtn.disabled = true;
+
+  try {
+    // Clear all campaign data (db.version(2).stores / markersCampaigns)
+    await db.markersCampaigns.clear();
+    campaignManager.clearAllCampaigns();
+
+    await processGoogleData(savedUrl);
+    await initializeCityFilter();
+    await updateStatistics();
+  } catch (error) {
+    console.error('Error refetching Google data:', error);
+    alert('Error refetching Google data. Please try again.\n\nError: ' + error.message);
+  } finally {
+    refetchBtn.innerHTML = originalHTML;
+    refetchBtn.disabled = false;
+  }
+}
+
 // Initialize the application when the page loads
 document.addEventListener('DOMContentLoaded', () => {
   initializeApp();
@@ -1929,11 +1987,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Prevent map scroll when scrolling inside tracker-content
   const tracker = document.getElementById('tracker-content');
   if (tracker) {
-    tracker.addEventListener('touchmove', function(e) {
+    tracker.addEventListener('touchmove', function (e) {
       e.stopPropagation();
     }, { passive: false });
 
-    tracker.addEventListener('wheel', function(e) {
+    tracker.addEventListener('wheel', function (e) {
       e.stopPropagation();
     }, { passive: false });
   }
@@ -2047,17 +2105,17 @@ function generateWorkReport(event) {
     // Collect form data
     const startingKm = document.getElementById('starting-km').value;
     const endingKm = document.getElementById('ending-km').value;
-    
+
     // Get selected campaigns
     const campaignCheckboxes = document.querySelectorAll('input[name="campaign"]:checked');
     const selectedCampaigns = Array.from(campaignCheckboxes).map(cb => cb.value);
-    
+
     // Get advertisement quantities
     const adMaxi = document.getElementById('ad-maxi').value || '0';
     const adSingle = document.getElementById('ad-single').value || '0';
     const adKeski = document.getElementById('ad-keski').value || '0';
     const adTupla = document.getElementById('ad-tupla').value || '0';
-    
+
     // Get extra work
     const extraWork = document.getElementById('extra-work').value.trim();
 
@@ -2071,7 +2129,7 @@ function generateWorkReport(event) {
     let description = `Starting KM: ${startingKm}\n`;
     description += `Ending KM: ${endingKm}\n`;
     description += `Total Distance: ${(parseInt(endingKm) - parseInt(startingKm))} km\n\n`;
-    
+
     if (selectedCampaigns.length > 0) {
       description += `Campaigns:\n`;
       selectedCampaigns.forEach(campaign => {
@@ -2079,7 +2137,7 @@ function generateWorkReport(event) {
       });
       description += `\n`;
     }
-    
+
     // Check if any ads were changed
     const totalAds = parseInt(adMaxi) + parseInt(adSingle) + parseInt(adKeski) + parseInt(adTupla);
     if (totalAds > 0) {
@@ -2090,7 +2148,7 @@ function generateWorkReport(event) {
       if (parseInt(adTupla) > 0) description += `• Tupla: ${adTupla}\n`;
       description += `\n`;
     }
-    
+
     if (extraWork) {
       description += `Extra Work:\n${extraWork}\n`;
     }
@@ -2100,7 +2158,7 @@ function generateWorkReport(event) {
     const year = now.getFullYear();
     const month = now.getMonth() + 1; // 0-indexed
     const day = now.getDate();
-    
+
     // Format date for title (DD.MM.YYYY)
     const dateStr = `${day.toString().padStart(2, '0')}.${month.toString().padStart(2, '0')}.${year}`;
     const title = `Work Report - ${dateStr}`;
@@ -2119,10 +2177,10 @@ function generateWorkReport(event) {
     cal.download(`work-report-${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`);
 
     console.log('Work report ICS file generated successfully');
-    
+
     // Keep modal open and notify user
     alert('Report formed successfully as .ics file! Import it to your calendar.');
-    
+
   } catch (error) {
     console.error('Error generating work report:', error);
     alert('Error generating work report. Please try again.');
@@ -2130,10 +2188,10 @@ function generateWorkReport(event) {
 }
 
 // Close modal when clicking outside of it or pressing Escape
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const modal = document.getElementById('report-modal');
   if (modal) {
-    modal.addEventListener('click', function(event) {
+    modal.addEventListener('click', function (event) {
       if (event.target === modal) {
         closeReportModal();
       }
@@ -2141,7 +2199,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Close report modal on Escape key
-  document.addEventListener('keydown', function(event) {
+  document.addEventListener('keydown', function (event) {
     if (event.key === 'Escape') {
       const reportModal = document.getElementById('report-modal');
       if (reportModal && reportModal.style.display !== 'none') {
